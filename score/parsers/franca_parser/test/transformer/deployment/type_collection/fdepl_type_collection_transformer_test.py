@@ -46,6 +46,21 @@ TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
 class FDEPLTypeCollectionTransformerTest(unittest.TestCase):
     """Verify type-collection deployments from a self-contained FDEPL graph."""
 
+    def test_transform_files_given_anonymous_type_collection_expect_target_bound_by_package(self) -> None:
+        deployment_file = TEST_DATA_DIRECTORY / "anonymous_someip_deployment.fdepl"
+        specification_file = TEST_DATA_DIRECTORY / "someip_deployment_spec.fdepl"
+        types_file = TEST_DATA_DIRECTORY / "anonymous_types.fidl"
+        parser = FrancaParser(
+            root_files=[deployment_file],
+            dependency_files=[specification_file, types_file],
+        )
+
+        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+
+        deployment = transformed_files[deployment_file.resolve()].type_collection_deployments[0]
+        self.assertIsNone(deployment.target.name)
+        self.assertEqual(deployment.target.datatypes[0].name.as_str, "Payload")
+
     def test_transform_files_given_someip_type_collection_deployment_expect_bound_datatype_deployments(self) -> None:
         deployment_file = TEST_DATA_DIRECTORY / "score_type_collection_someip_deployment.fdepl"
         specification_file = TEST_DATA_DIRECTORY / "someip_deployment_spec.fdepl"

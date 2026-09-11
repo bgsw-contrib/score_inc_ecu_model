@@ -103,7 +103,9 @@ class FDEPLResolver:
             if reference.names[: len(namespace)] != namespace:
                 continue
             for type_collection in imported_file.type_collections:
-                if type_collection.name == reference.names[-1]:
+                if (
+                    type_collection.name is None and reference.names == namespace
+                ) or type_collection.name == reference.names[-1]:
                     matches.append(type_collection)
         if len(matches) == 1:
             return matches[0]

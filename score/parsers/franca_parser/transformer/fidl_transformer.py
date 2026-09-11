@@ -289,11 +289,12 @@ class FIDLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fi_enumerator(name: ValidIdentifier, *elements: object) -> EnumValue:
+    def fi_enumerator(*elements: object) -> EnumValue:
         """Transform one FIDL enum literal."""
+        name = next(element for element in elements if isinstance(element, ValidIdentifier))
         is_negative = any(isinstance(element, Token) and str(element) == "-" for element in elements)
-        value = next((element for element in elements if not isinstance(element, Token)), None)
-        if is_negative and isinstance(value, (int, float)):
+        value = next((element for element in elements if isinstance(element, int)), None)
+        if is_negative and value is not None:
             value = -value
         return EnumValue(name=name, value=value)
 
@@ -367,6 +368,12 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fi_field(field: DataTypeField) -> DataTypeField:
         """Unwrap a FIDL field declaration."""
+        return field
+
+    @staticmethod
+    @v_args(inline=True)
+    def fi_annotated_field(_annotation: object, field: DataTypeField) -> DataTypeField:
+        """Unwrap a FIDL field declaration preceded by annotations."""
         return field
 
     @staticmethod

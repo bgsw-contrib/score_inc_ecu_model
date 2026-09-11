@@ -1,0 +1,7 @@
+package example.deployment
+
+import "someip_deployment_spec.fdepl"
+import "anonymous_types.fidl"
+
+define network.someip for typeCollection example.anonymous as AnonymousTypesSomeip {
+}
