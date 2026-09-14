@@ -15,13 +15,9 @@
 
 import logging
 
-from score.ecu_model.common.franca_name_types import (
-    ValidIdentifier,
-)
-from score.ecu_model.data_types.data_type_definition import (
-    DataTypeField,
-    DataTypeModel,
-)
+from score.ecu_model.data_types.common import DataTypeBase
+from score.ecu_model.data_types.composite import DataTypeField
+from score.ecu_model.data_types.identifier import Identifier
 from score.parsers.franca_parser.model.fdepl.definition import (
     DeploymentElement,
     DeploymentParameter,
@@ -73,7 +69,7 @@ class DeploymentPropertyApplier:
         if hosts is None:
             return
         target = deployment.deployed_type
-        if not isinstance(target, DataTypeModel):
+        if not isinstance(target, DataTypeBase):
             raise ValueError("Unresolved datatype deployment target")
         self._apply_parameters(target, deployment.parameter_set, specification, hosts)
         if isinstance(deployment, (StructDeployment, UnionDeployment)):
@@ -94,7 +90,7 @@ class DeploymentPropertyApplier:
 
     def _apply_parameters(
         self,
-        target: DataTypeModel | DataTypeField,
+        target: DataTypeBase | DataTypeField,
         parameters: list[DeploymentParameter],
         specification: DeploymentSpecification,
         hosts: set[str],
@@ -170,15 +166,13 @@ class DeploymentPropertyApplier:
         if property_type is DeploymentPropertyType.BOOLEAN:
             return isinstance(value, bool)
         if property_type is DeploymentPropertyType.ENUM:
-            return isinstance(value, ValidIdentifier) and value in declaration.type_reference.enumerators
+            return isinstance(value, Identifier) and value in declaration.type_reference.enumerators
         return True
 
     @staticmethod
     def _normalize_value(value: object, declaration: ParameterDeclaration) -> object:
         if isinstance(value, list):
             return [DeploymentPropertyApplier._normalize_value(item, declaration) for item in value]
-        if declaration.type_reference.property_type is DeploymentPropertyType.ENUM and isinstance(
-            value, ValidIdentifier
-        ):
+        if declaration.type_reference.property_type is DeploymentPropertyType.ENUM and isinstance(value, Identifier):
             return value.as_str
         return value

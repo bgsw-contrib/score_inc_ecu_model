@@ -17,4 +17,4 @@ SPDX-License-Identifier: Apache-2.0
 
 [![Eclipse Score](https://img.shields.io/badge/Eclipse-Score-orange.svg)](https://eclipse-score.github.io/score/main/modules/communication/index.html)
 
-User and developer documentation will be shared here in the future
+User and developer documentation will be shared here in the future.

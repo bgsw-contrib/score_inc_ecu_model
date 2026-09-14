@@ -16,13 +16,11 @@
 from pathlib import Path
 import unittest
 
-from score.ecu_model.data_types.data_type_definition import (
-    ArrayDataType,
-    EnumDataType,
-    StructDataType,
-    TypedefDataType,
-    UnionDataType,
-)
+from score.ecu_model.data_types.array import ArrayDataType
+from score.ecu_model.data_types.enum import EnumDataType
+from score.ecu_model.data_types.struct import StructDataType
+from score.ecu_model.data_types.typedef import TypedefDataType
+from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import (
     FrancaFileGraphTransformer,

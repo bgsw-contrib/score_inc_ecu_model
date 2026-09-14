@@ -33,6 +33,6 @@ py_library(
         "//score/parsers/franca_parser:__subpackages__",
     ],
     deps = [
-        "//score/ecu_model",
+        "//score/ecu_model/data_types",
     ],
 )

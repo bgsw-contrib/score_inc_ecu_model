@@ -17,24 +17,20 @@ from collections.abc import Callable
 
 from lark import Token, v_args
 
-from score.ecu_model.common.franca_name_types import (
-    FullyQualifiedName,
-    ValidIdentifier,
+from score.ecu_model.data_types.array import ArrayDataType
+from score.ecu_model.data_types.common import (
+    DataTypeBase,
+    DataTypeOrReference,
+    DataTypeSource,
 )
-from score.ecu_model.data_types.data_type_definition import (
-    ArrayDataType,
-    DataTypeDefinition,
-    DataTypeField,
-    DataTypeModel,
-    EnumDataType,
-    EnumValue,
-    MapDataType,
-    PrimitiveDataType,
-    PrimitiveDataTypeKind,
-    StructDataType,
-    TypedefDataType,
-    UnionDataType,
-)
+from score.ecu_model.data_types.composite import DataTypeField
+from score.ecu_model.data_types.enum import EnumDataType, EnumValue
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
+from score.ecu_model.data_types.map import MapDataType
+from score.ecu_model.data_types.primitives import PrimitiveDataType
+from score.ecu_model.data_types.struct import StructDataType
+from score.ecu_model.data_types.typedef import TypedefDataType
+from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.franca_parser.model.fidl.fidl_file import FIDLFileModel
 from score.parsers.franca_parser.model.franca_file import (
     FrancaFileModel,
@@ -53,21 +49,24 @@ from score.parsers.franca_parser.transformer.resolver.fidl_datatype_resolver imp
 )
 
 
-PRIMITIVE_KINDS = {
-    "boolean": PrimitiveDataTypeKind.BOOL,
-    "string": PrimitiveDataTypeKind.STRING,
-    "bytebuffer": PrimitiveDataTypeKind.BYTES,
-    "double": PrimitiveDataTypeKind.DOUBLE,
-    "float": PrimitiveDataTypeKind.FLOAT,
-    "uint8": PrimitiveDataTypeKind.UINT8,
-    "uint16": PrimitiveDataTypeKind.UINT16,
-    "uint32": PrimitiveDataTypeKind.UINT32,
-    "uint64": PrimitiveDataTypeKind.UINT64,
-    "int8": PrimitiveDataTypeKind.INT8,
-    "int16": PrimitiveDataTypeKind.INT16,
-    "int32": PrimitiveDataTypeKind.INT32,
-    "int64": PrimitiveDataTypeKind.INT64,
+PRIMITIVE_TYPES = {
+    "boolean": PrimitiveDataType.BOOL,
+    "string": PrimitiveDataType.STRING,
+    "bytebuffer": PrimitiveDataType.BYTES,
+    "double": PrimitiveDataType.DOUBLE,
+    "float": PrimitiveDataType.FLOAT,
+    "uint8": PrimitiveDataType.UINT8,
+    "uint16": PrimitiveDataType.UINT16,
+    "uint32": PrimitiveDataType.UINT32,
+    "uint64": PrimitiveDataType.UINT64,
+    "int8": PrimitiveDataType.INT8,
+    "int16": PrimitiveDataType.INT16,
+    "int32": PrimitiveDataType.INT32,
+    "int64": PrimitiveDataType.INT64,
 }
+
+# Grammar elements that may end up in a data type slot: a builtin, a declaration, or a not yet resolved name.
+_DATA_TYPE_ELEMENTS = (QualifiedName, DataTypeBase, PrimitiveDataType)
 
 
 class FIDLTransformer(FrancaFileTransformer):
@@ -100,23 +99,15 @@ class FIDLTransformer(FrancaFileTransformer):
         return file_model
 
     @staticmethod
-    def _primitive_datatype(name: str) -> PrimitiveDataType:
-        """Build an Orion builtin model while preserving the Franca spelling."""
-        return PrimitiveDataType(
-            name=ValidIdentifier(name),
-            primitive=PRIMITIVE_KINDS[name],
-        )
-
-    @staticmethod
     def _declaration_namespace(
-        package: FullyQualifiedName,
+        package: QualifiedName,
         collection: TypeCollection,
-    ) -> FullyQualifiedName:
+    ) -> QualifiedName:
         """Return the namespace of declarations owned by one type collection."""
         names = list(package.names)
         if collection.name is not None:
             names.append(collection.name)
-        return FullyQualifiedName(names=names)
+        return QualifiedName(tuple(names))
 
     @classmethod
     def _apply_declaration_metadata(cls, file_model: FIDLFileModel) -> None:
@@ -125,7 +116,6 @@ class FIDLTransformer(FrancaFileTransformer):
             namespace = cls._declaration_namespace(file_model.namespace, collection)
             for datatype in collection.datatypes:
                 datatype.namespace = namespace
-                datatype.source_kind = "franca"
                 datatype.source_uri = str(file_model.file_path)
 
     @staticmethod
@@ -145,7 +135,7 @@ class FIDLTransformer(FrancaFileTransformer):
             file_model,
         )
 
-    def _record_datatype_references(self, datatype: DataTypeModel) -> None:
+    def _record_datatype_references(self, datatype: DataTypeBase) -> None:
         if isinstance(datatype, TypedefDataType):
             self._record_reference(datatype, datatype.data_type, lambda value: setattr(datatype, "data_type", value))
         elif isinstance(datatype, EnumDataType):
@@ -157,10 +147,10 @@ class FIDLTransformer(FrancaFileTransformer):
         elif isinstance(datatype, ArrayDataType):
             self._record_reference(datatype, datatype.data_type, lambda value: setattr(datatype, "data_type", value))
         elif isinstance(datatype, MapDataType):
-            self._record_reference(datatype, datatype.map_from, lambda value: setattr(datatype, "map_from", value))
-            self._record_reference(datatype, datatype.map_to, lambda value: setattr(datatype, "map_to", value))
+            self._record_reference(datatype, datatype.key_type, lambda value: setattr(datatype, "key_type", value))
+            self._record_reference(datatype, datatype.value_type, lambda value: setattr(datatype, "value_type", value))
 
-    def _record_field_references(self, datatype: DataTypeModel, field: DataTypeField) -> None:
+    def _record_field_references(self, datatype: DataTypeBase, field: DataTypeField) -> None:
         if isinstance(field.data_type, ArrayDataType):
             self._record_reference(
                 datatype,
@@ -172,11 +162,11 @@ class FIDLTransformer(FrancaFileTransformer):
 
     def _record_reference(
         self,
-        datatype: DataTypeModel,
+        datatype: DataTypeBase,
         reference: object,
-        bind: Callable[[DataTypeDefinition], None],
+        bind: Callable[[DataTypeOrReference], None],
     ) -> None:
-        if isinstance(reference, FullyQualifiedName):
+        if isinstance(reference, QualifiedName):
             self._pending_datatype_references_by_declaration.setdefault(id(datatype), []).append(
                 PendingDatatypeReference(reference, bind, datatype)
             )
@@ -188,7 +178,7 @@ class FIDLTransformer(FrancaFileTransformer):
         return model_root
 
     @v_args(inline=True)
-    def fi_model_root(self, package: FullyQualifiedName, *elements: object) -> FIDLFileModel:
+    def fi_model_root(self, package: QualifiedName, *elements: object) -> FIDLFileModel:
         """Build the FIDL file model from its transformed type collections."""
         type_collections: list[TypeCollection] = []
         used_valid_ids: set[str] = set()
@@ -226,9 +216,9 @@ class FIDLTransformer(FrancaFileTransformer):
         """Collect datatype declarations owned by one FIDL type collection."""
         collection = TypeCollection(name=None)
         for element in elements:
-            if isinstance(element, ValidIdentifier):
+            if isinstance(element, Identifier):
                 collection.name = element
-            elif isinstance(element, DataTypeModel):
+            elif isinstance(element, DataTypeBase):
                 collection.datatypes.append(element)
                 for pending in self._pending_datatype_references_by_declaration.pop(id(element), []):
                     pending.owning_collection = collection
@@ -236,7 +226,7 @@ class FIDLTransformer(FrancaFileTransformer):
         return collection
 
     @v_args(inline=True)
-    def fi_type(self, datatype: DataTypeModel) -> DataTypeModel:
+    def fi_type(self, datatype: DataTypeBase) -> DataTypeBase:
         """Unwrap one FIDL datatype declaration."""
         if isinstance(datatype, PrimitiveDataType):
             raise ValueError(
@@ -252,7 +242,7 @@ class FIDLTransformer(FrancaFileTransformer):
         return data_type
 
     @v_args(inline=True)
-    def imported(self, reference: FullyQualifiedName) -> FullyQualifiedName | DataTypeDefinition:
+    def imported(self, reference: QualifiedName) -> QualifiedName | DataTypeBase:
         """Resolve a reference from already transformed imports when possible."""
         return self._import_resolver.resolve_imports(reference, self._transformation_context) or reference
 
@@ -264,26 +254,37 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fi_type_def(self, *elements: object) -> TypedefDataType:
         """Transform a FIDL typedef declaration."""
-        name = next(element for element in elements if isinstance(element, ValidIdentifier))
-        data_type = next(element for element in elements if isinstance(element, (FullyQualifiedName, DataTypeModel)))
-        datatype = TypedefDataType(name=name, data_type=data_type)
+        name = next(element for element in elements if isinstance(element, Identifier))
+        data_type = next(element for element in elements if isinstance(element, _DATA_TYPE_ELEMENTS))
+        datatype = TypedefDataType(
+            name=name,
+            source_kind=DataTypeSource.FRANCA,
+            data_type=data_type,
+        )
         self._record_datatype_references(datatype)
         return datatype
 
     @v_args(inline=True)
     def fi_enumeration_type(self, *elements: object) -> EnumDataType:
         """Transform a FIDL enum declaration and its implicit values."""
-        name = next(element for element in elements if isinstance(element, ValidIdentifier))
-        enum = EnumDataType(name=name)
+        name = next(element for element in elements if isinstance(element, Identifier))
+        extends = next((element for element in elements if isinstance(element, _DATA_TYPE_ELEMENTS)), None)
+        values: list[EnumValue] = []
         next_value = 0
         for element in elements:
-            if isinstance(element, (FullyQualifiedName, DataTypeModel)):
-                enum.extends = element
-            elif isinstance(element, EnumValue):
-                if element.value is None:
-                    element.value = next_value
-                next_value = self._next_enum_value(element.value)
-                enum.values.append(element)
+            if not isinstance(element, EnumValue):
+                continue
+            value = next_value if element.value is None else element.value
+            next_value = self._next_enum_value(value)
+            if element.value is None:
+                element.value = value
+            values.append(element)
+        enum = EnumDataType(
+            name=name,
+            source_kind=DataTypeSource.FRANCA,
+            extends=extends,
+            values=tuple(values),
+        )
         self._record_datatype_references(enum)
         return enum
 
@@ -291,7 +292,7 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fi_enumerator(*elements: object) -> EnumValue:
         """Transform one FIDL enum literal."""
-        name = next(element for element in elements if isinstance(element, ValidIdentifier))
+        name = next(element for element in elements if isinstance(element, Identifier))
         is_negative = any(isinstance(element, Token) and str(element) == "-" for element in elements)
         value = next((element for element in elements if isinstance(element, int)), None)
         if is_negative and value is not None:
@@ -302,12 +303,10 @@ class FIDLTransformer(FrancaFileTransformer):
     def fi_struct_type(self, *elements: object) -> StructDataType:
         """Transform a FIDL struct declaration."""
         datatype = StructDataType(
-            name=next(element for element in elements if isinstance(element, ValidIdentifier)),
-            extends=next(
-                (element for element in elements if isinstance(element, (FullyQualifiedName, DataTypeModel))),
-                None,
-            ),
-            fields=[element for element in elements if isinstance(element, DataTypeField)],
+            name=next(element for element in elements if isinstance(element, Identifier)),
+            source_kind=DataTypeSource.FRANCA,
+            extends=next((element for element in elements if isinstance(element, _DATA_TYPE_ELEMENTS)), None),
+            fields=tuple(element for element in elements if isinstance(element, DataTypeField)),
         )
         self._record_datatype_references(datatype)
         return datatype
@@ -316,12 +315,10 @@ class FIDLTransformer(FrancaFileTransformer):
     def fi_union_type(self, *elements: object) -> UnionDataType:
         """Transform a FIDL union declaration."""
         datatype = UnionDataType(
-            name=next(element for element in elements if isinstance(element, ValidIdentifier)),
-            extends=next(
-                (element for element in elements if isinstance(element, (FullyQualifiedName, DataTypeModel))),
-                None,
-            ),
-            fields=[element for element in elements if isinstance(element, DataTypeField)],
+            name=next(element for element in elements if isinstance(element, Identifier)),
+            source_kind=DataTypeSource.FRANCA,
+            extends=next((element for element in elements if isinstance(element, _DATA_TYPE_ELEMENTS)), None),
+            fields=tuple(element for element in elements if isinstance(element, DataTypeField)),
         )
         self._record_datatype_references(datatype)
         return datatype
@@ -329,12 +326,13 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fi_array_type(self, *elements: object) -> ArrayDataType:
         """Transform a named FIDL array declaration."""
-        name = next(element for element in elements if isinstance(element, ValidIdentifier))
-        data_type = next(element for element in elements if isinstance(element, (FullyQualifiedName, DataTypeModel)))
+        name = next(element for element in elements if isinstance(element, Identifier))
+        data_type = next(element for element in elements if isinstance(element, _DATA_TYPE_ELEMENTS))
         dimensions = next((element for element in elements if isinstance(element, tuple)), None)
         dimension_min, dimension_max = dimensions if dimensions is not None else (None, None)
         datatype = ArrayDataType(
             name=name,
+            source_kind=DataTypeSource.FRANCA,
             data_type=data_type,
             dimension_min=dimension_min,
             dimension_max=dimension_max,
@@ -345,10 +343,15 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fi_map_type(self, *elements: object) -> MapDataType:
         """Transform a FIDL map declaration."""
-        name = next(element for element in elements if isinstance(element, ValidIdentifier))
-        data_types = [element for element in elements if isinstance(element, (FullyQualifiedName, DataTypeModel))]
-        map_from, map_to = data_types
-        datatype = MapDataType(name=name, map_from=map_from, map_to=map_to)
+        name = next(element for element in elements if isinstance(element, Identifier))
+        data_types = [element for element in elements if isinstance(element, _DATA_TYPE_ELEMENTS)]
+        key_type, value_type = data_types
+        datatype = MapDataType(
+            name=name,
+            source_kind=DataTypeSource.FRANCA,
+            key_type=key_type,
+            value_type=value_type,
+        )
         self._record_datatype_references(datatype)
         return datatype
 
@@ -385,11 +388,12 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fi_element_declaration(self, data_type: object, *elements: object) -> DataTypeField:
         """Transform a FIDL struct or union field declaration."""
-        field_name = next(element for element in elements if isinstance(element, ValidIdentifier))
+        field_name = next(element for element in elements if isinstance(element, Identifier))
         dimensions = next((element for element in elements if isinstance(element, tuple)), None)
         if dimensions is not None:
             dimension_min, dimension_max = dimensions
             data_type = ArrayDataType(
+                source_kind=DataTypeSource.FRANCA,
                 data_type=data_type,
                 is_inline=True,
                 dimension_min=dimension_min,
@@ -425,7 +429,7 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def boolean_type(self) -> PrimitiveDataType:
         """Transform the Boolean primitive type name."""
-        return self._primitive_datatype("boolean")
+        return PRIMITIVE_TYPES["boolean"]
 
     @staticmethod
     @v_args(inline=True)
@@ -436,7 +440,7 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def string_type(self) -> PrimitiveDataType:
         """Transform the String primitive type name."""
-        return self._primitive_datatype("string")
+        return PRIMITIVE_TYPES["string"]
 
     @staticmethod
     @v_args(inline=True)
@@ -447,7 +451,7 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def float_type(self) -> PrimitiveDataType:
         """Transform the Float primitive type name."""
-        return self._primitive_datatype("float")
+        return PRIMITIVE_TYPES["float"]
 
     @staticmethod
     @v_args(inline=True)
@@ -458,12 +462,12 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def bytebuffer(self) -> PrimitiveDataType:
         """Transform the ByteBuffer primitive type name."""
-        return self._primitive_datatype("bytebuffer")
+        return PRIMITIVE_TYPES["bytebuffer"]
 
     @v_args(inline=True)
     def double_type(self) -> PrimitiveDataType:
         """Transform the Double primitive type name."""
-        return self._primitive_datatype("double")
+        return PRIMITIVE_TYPES["double"]
 
     @staticmethod
     @v_args(inline=True)
@@ -474,39 +478,39 @@ class FIDLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def uint8(self) -> PrimitiveDataType:
         """Transform the UInt8 primitive type name."""
-        return self._primitive_datatype("uint8")
+        return PRIMITIVE_TYPES["uint8"]
 
     @v_args(inline=True)
     def uint16(self) -> PrimitiveDataType:
         """Transform the UInt16 primitive type name."""
-        return self._primitive_datatype("uint16")
+        return PRIMITIVE_TYPES["uint16"]
 
     @v_args(inline=True)
     def uint32(self) -> PrimitiveDataType:
         """Transform the UInt32 primitive type name."""
-        return self._primitive_datatype("uint32")
+        return PRIMITIVE_TYPES["uint32"]
 
     @v_args(inline=True)
     def uint64(self) -> PrimitiveDataType:
         """Transform the UInt64 primitive type name."""
-        return self._primitive_datatype("uint64")
+        return PRIMITIVE_TYPES["uint64"]
 
     @v_args(inline=True)
     def int8(self) -> PrimitiveDataType:
         """Transform the Int8 primitive type name."""
-        return self._primitive_datatype("int8")
+        return PRIMITIVE_TYPES["int8"]
 
     @v_args(inline=True)
     def int16(self) -> PrimitiveDataType:
         """Transform the Int16 primitive type name."""
-        return self._primitive_datatype("int16")
+        return PRIMITIVE_TYPES["int16"]
 
     @v_args(inline=True)
     def int32(self) -> PrimitiveDataType:
         """Transform the Int32 primitive type name."""
-        return self._primitive_datatype("int32")
+        return PRIMITIVE_TYPES["int32"]
 
     @v_args(inline=True)
     def int64(self) -> PrimitiveDataType:
         """Transform the Int64 primitive type name."""
-        return self._primitive_datatype("int64")
+        return PRIMITIVE_TYPES["int64"]

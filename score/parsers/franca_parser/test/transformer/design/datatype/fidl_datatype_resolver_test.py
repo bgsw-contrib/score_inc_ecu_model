@@ -16,13 +16,9 @@
 from pathlib import Path
 import unittest
 
-from score.ecu_model.common.franca_name_types import (
-    FullyQualifiedName,
-    ValidIdentifier,
-)
-from score.ecu_model.data_types.data_type_definition import (
-    StructDataType,
-)
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
+from score.ecu_model.data_types.common import DataTypeSource
+from score.ecu_model.data_types.struct import StructDataType
 from score.parsers.franca_parser.model.fidl.fidl_file import (
     FIDLFileModel,
 )
@@ -37,22 +33,22 @@ from score.parsers.franca_parser.transformer.resolver.fidl_datatype_resolver imp
 )
 
 
-def qualified_name(value: str) -> FullyQualifiedName:
+def qualified_name(value: str) -> QualifiedName:
     """Create a qualified Franca name from a readable dotted test value."""
-    return FullyQualifiedName(names=[ValidIdentifier(part) for part in value.split(".")])
+    return QualifiedName(tuple(Identifier(part) for part in value.split(".")))
 
 
 def type_collection(name: str | None, *datatypes: StructDataType) -> TypeCollection:
     """Create a FIDL type collection containing the supplied definitions."""
     return TypeCollection(
-        name=ValidIdentifier(name) if name is not None else None,
+        name=Identifier(name) if name is not None else None,
         datatypes=list(datatypes),
     )
 
 
 def struct(name: str) -> StructDataType:
     """Create a minimal datatype definition for resolver behavior tests."""
-    return StructDataType(name=ValidIdentifier(name))
+    return StructDataType(name=name, source_kind=DataTypeSource.FRANCA)
 
 
 class FIDLDataTypeResolverTest(unittest.TestCase):

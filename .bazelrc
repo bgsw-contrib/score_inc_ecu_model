@@ -1,5 +1,11 @@
 test --test_output=errors
 
+# Python coverage configuration
+# Run with: bazel coverage //score/...
+coverage --instrument_test_targets
+coverage --instrumentation_filter="^//score[/:]"
+coverage --combined_report=lcov
+
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 
