@@ -10,21 +10,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+from __future__ import annotations
 
-from pathlib import PurePath
+from typing import Literal
+
+from pydantic import Field
+
+from score.ecu_model.data_types.common import DataTypeKind
+from score.ecu_model.data_types.composite import CompositeDataType
 
 
-def validate_path_text(value: str | None, field_name: str) -> str | None:
-    """Validate an optional filesystem-like path string and return its stripped form."""
-    if value is None:
-        return None
+class StructDataType(CompositeDataType):
+    """A declared struct data type with named fields."""
 
-    stripped = value.strip()
-    if not stripped:
-        raise ValueError(f"{field_name} must not be empty when provided")
-    if "\x00" in stripped:
-        raise ValueError(f"{field_name} must not contain null bytes")
-
-    # Parsing via PurePath ensures filesystem-like path semantics.
-    PurePath(stripped)
-    return stripped
+    kind: Literal[DataTypeKind.STRUCT] = Field(default=DataTypeKind.STRUCT, frozen=True)

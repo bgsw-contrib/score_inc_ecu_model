@@ -16,15 +16,12 @@
 from pathlib import Path
 import unittest
 
-from score.ecu_model.data_types.data_type_definition import (
-    ArrayDataType,
-    EnumDataType,
-    EnumValue,
-    MapDataType,
-    StructDataType,
-    TypedefDataType,
-    UnionDataType,
-)
+from score.ecu_model.data_types.array import ArrayDataType
+from score.ecu_model.data_types.enum import EnumDataType, EnumValue
+from score.ecu_model.data_types.map import MapDataType
+from score.ecu_model.data_types.struct import StructDataType
+from score.ecu_model.data_types.typedef import TypedefDataType
+from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.franca_parser.model.fdepl.type_collection_deployment import (
     ArrayDeployment,
     EnumValueDeployment,
@@ -139,8 +136,8 @@ class FDEPLTypeCollectionTransformerTest(unittest.TestCase):
         self.assertIsInstance(map_deployment, MapDeployment)
         self.assertIsInstance(map_deployment.deployed_type, MapDataType)
         self.assertEqual(map_deployment.deployed_type.name.as_str, "MetaInfoType")
-        self.assertIsInstance(map_deployment.deployed_type.map_from, TypedefDataType)
-        self.assertEqual(map_deployment.deployed_type.map_from.name.as_str, "DisplayText")
+        self.assertIsInstance(map_deployment.deployed_type.key_type, TypedefDataType)
+        self.assertEqual(map_deployment.deployed_type.key_type.name.as_str, "DisplayText")
         self.assertEqual(
             [(parameter.name.as_str, parameter.value.as_str) for parameter in map_deployment.key],
             [("MapKeyParam", "MapKeyValue")],

@@ -15,28 +15,30 @@
 
 from lark import Transformer, v_args
 
-from score.ecu_model.common.franca_name_types import (
-    FullyQualifiedName,
-    ValidIdentifier,
-)
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
+
+
+def franca_identifier(name: object) -> Identifier:
+    """Build an identifier from a Franca token, dropping the marker that escapes reserved keywords."""
+    return Identifier(str(name).replace("^", ""))
 
 
 class FrancaFileTransformer(Transformer):
     """Base Lark transformer for a single Franca source file."""
 
     @staticmethod
-    def fi_fqn(names: list[ValidIdentifier]) -> FullyQualifiedName:
+    def fi_fqn(names: list[Identifier]) -> QualifiedName:
         """Build a Franca fully qualified name."""
-        return FullyQualifiedName(names=names)
+        return QualifiedName(tuple(names))
 
     @staticmethod
     @v_args(inline=True)
-    def f_valid_id(name: object) -> ValidIdentifier:
+    def f_valid_id(name: object) -> Identifier:
         """Build a validated Franca identifier."""
-        return ValidIdentifier(str(name))
+        return franca_identifier(name)
 
     @staticmethod
     @v_args(inline=True)
-    def fi_keywords(keyword: object) -> ValidIdentifier:
+    def fi_keywords(keyword: object) -> Identifier:
         """Build an escaped Franca keyword identifier."""
-        return ValidIdentifier(str(keyword))
+        return franca_identifier(keyword)

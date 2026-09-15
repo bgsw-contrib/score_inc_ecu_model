@@ -11,6 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-if __name__ == "__main__":
-    print("Hello")
-    print("Run actions")
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "model_test",
+    size = "small",
+    srcs = ["model_test.py"],
+    deps = [
+        "//score/ecu_model",
+        "@pypi//pydantic",
+    ],
+)

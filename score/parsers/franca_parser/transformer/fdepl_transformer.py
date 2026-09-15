@@ -15,10 +15,7 @@
 
 from lark import v_args
 
-from score.ecu_model.common.franca_name_types import (
-    FullyQualifiedName,
-    ValidIdentifier,
-)
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.parsers.franca_parser.deployment_property_applier import (
     DeploymentPropertyApplier,
 )
@@ -53,6 +50,7 @@ from score.parsers.franca_parser.model.franca_file import (
 from score.parsers.franca_parser.model.parsed_file import ParsedFile
 from score.parsers.franca_parser.transformer.base_transformer import (
     FrancaFileTransformer,
+    franca_identifier,
 )
 from score.parsers.franca_parser.transformer.resolver.fdepl_resolver import (
     FDEPLResolver,
@@ -90,7 +88,7 @@ class FDEPLTransformer(FrancaFileTransformer):
         return model_root
 
     @v_args(inline=True)
-    def fd_model(self, package: FullyQualifiedName, *elements: object) -> FDEPLFileModel:
+    def fd_model(self, package: QualifiedName, *elements: object) -> FDEPLFileModel:
         """Collect specifications declared by an FDEPL file."""
         specifications: list[DeploymentSpecification] = []
         type_collection_deployments: list[TypeCollectionDeployment] = []
@@ -129,9 +127,9 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_specification(name: FullyQualifiedName, *elements: object) -> DeploymentSpecification:
+    def fd_specification(name: QualifiedName, *elements: object) -> DeploymentSpecification:
         """Build a named specification with inherited specifications and hosts."""
-        base_specifications = [element for element in elements if isinstance(element, FullyQualifiedName)]
+        base_specifications = [element for element in elements if isinstance(element, QualifiedName)]
         hosts: dict[str, dict[str, ParameterDeclaration]] = {}
         for element in elements:
             if isinstance(element, tuple):
@@ -153,7 +151,7 @@ class FDEPLTransformer(FrancaFileTransformer):
     @staticmethod
     @v_args(inline=True)
     def fd_parameter_decl(
-        name: ValidIdentifier,
+        name: Identifier,
         type_reference: DeploymentPropertyTypeReference,
         *liabilities: ParameterLiability,
     ) -> ParameterDeclaration:
@@ -168,7 +166,7 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     def _validate_liabilities(
-        name: ValidIdentifier,
+        name: Identifier,
         type_reference: DeploymentPropertyTypeReference,
         liabilities: tuple[ParameterLiability, ...],
     ) -> None:
@@ -200,7 +198,7 @@ class FDEPLTransformer(FrancaFileTransformer):
             DeploymentPropertyType.INTEGER: int,
             DeploymentPropertyType.STRING: str,
             DeploymentPropertyType.BOOLEAN: bool,
-            DeploymentPropertyType.ENUM: ValidIdentifier,
+            DeploymentPropertyType.ENUM: Identifier,
         }
         expected_type = expected_types.get(type_reference.property_type)
         return expected_type is None or all(isinstance(item, expected_type) for item in values)
@@ -230,7 +228,7 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_enum_type(*enumerators: ValidIdentifier) -> DeploymentPropertyTypeReference:
+    def fd_enum_type(*enumerators: Identifier) -> DeploymentPropertyTypeReference:
         """Transform an inline finite set of valid property values."""
         return DeploymentPropertyTypeReference(
             property_type=DeploymentPropertyType.ENUM,
@@ -239,7 +237,7 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_extension_type(extension: ValidIdentifier) -> DeploymentPropertyTypeReference:
+    def fd_extension_type(extension: Identifier) -> DeploymentPropertyTypeReference:
         """Transform a named property type extension."""
         return DeploymentPropertyTypeReference(
             property_type=DeploymentPropertyType.EXTENSION,
@@ -279,14 +277,14 @@ class FDEPLTransformer(FrancaFileTransformer):
     @v_args(inline=True)
     def fd_types(
         self,
-        specification: FullyQualifiedName,
-        target: FullyQualifiedName,
+        specification: QualifiedName,
+        target: QualifiedName,
         *elements: object,
     ) -> TypeCollectionDeployment:
         """Create an unresolved deployment for one imported FIDL type collection."""
         deployment = TypeCollectionDeployment(specification=specification, target=target)
         for element in elements:
-            if isinstance(element, FullyQualifiedName):
+            if isinstance(element, QualifiedName):
                 deployment.name = element
             elif isinstance(element, tuple) and element[0] == "use":
                 deployment.use_definitions.append(element[1])
@@ -316,13 +314,13 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_use_definition(reference: FullyQualifiedName) -> tuple[str, FullyQualifiedName]:
+    def fd_use_definition(reference: QualifiedName) -> tuple[str, QualifiedName]:
         """Mark one unresolved type-collection deployment use reference."""
         return "use", reference
 
     @staticmethod
     @v_args(inline=True)
-    def fd_struct(name: ValidIdentifier, *elements: object) -> StructDeployment:
+    def fd_struct(name: Identifier, *elements: object) -> StructDeployment:
         """Create an unresolved struct deployment and its field deployments."""
         deployment = StructDeployment(deployed_type=name)
         for element in elements:
@@ -334,7 +332,7 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_union(name: ValidIdentifier, *elements: object) -> UnionDeployment:
+    def fd_union(name: Identifier, *elements: object) -> UnionDeployment:
         """Create an unresolved union deployment and its field deployments."""
         deployment = UnionDeployment(deployed_type=name)
         for element in elements:
@@ -347,7 +345,7 @@ class FDEPLTransformer(FrancaFileTransformer):
     @staticmethod
     @v_args(inline=True)
     def fd_type_def(
-        name: ValidIdentifier,
+        name: Identifier,
         *parameters: DeploymentParameter,
     ) -> TypedefDeployment:
         """Create an unresolved typedef deployment."""
@@ -355,14 +353,14 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_field(name: ValidIdentifier, *elements: object) -> FieldDeployment:
+    def fd_field(name: Identifier, *elements: object) -> FieldDeployment:
         """Create an unresolved struct field deployment."""
         parameters = [element for element in elements if isinstance(element, DeploymentParameter)]
         return FieldDeployment(deployed_type=name, parameter_set=parameters)
 
     @staticmethod
     @v_args(inline=True)
-    def fd_array(name: ValidIdentifier, *elements: object) -> ArrayDeployment:
+    def fd_array(name: Identifier, *elements: object) -> ArrayDeployment:
         """Create an unresolved array deployment."""
         parameters = [element for element in elements if isinstance(element, DeploymentParameter)]
         return ArrayDeployment(deployed_type=name, parameter_set=parameters)
@@ -370,7 +368,7 @@ class FDEPLTransformer(FrancaFileTransformer):
     @staticmethod
     @v_args(inline=True)
     def fd_enumeration(
-        name: ValidIdentifier,
+        name: Identifier,
         *elements: object,
     ) -> EnumerationDeployment:
         """Create an unresolved enumeration deployment."""
@@ -391,7 +389,7 @@ class FDEPLTransformer(FrancaFileTransformer):
     @staticmethod
     @v_args(inline=True)
     def fd_enum_value(
-        name: ValidIdentifier,
+        name: Identifier,
         *parameters: DeploymentParameter,
     ) -> EnumValueDeployment:
         """Create an unresolved deployment for one enumeration value."""
@@ -399,7 +397,7 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_map(name: ValidIdentifier, *elements: object) -> MapDeployment:
+    def fd_map(name: Identifier, *elements: object) -> MapDeployment:
         """Create an unresolved map deployment with key and value properties."""
         deployment = MapDeployment(deployed_type=name)
         for element in elements:
@@ -432,23 +430,23 @@ class FDEPLTransformer(FrancaFileTransformer):
 
     @staticmethod
     @v_args(inline=True)
-    def fd_parameter(name: ValidIdentifier, value: object) -> DeploymentParameter:
+    def fd_parameter(name: Identifier, value: object) -> DeploymentParameter:
         """Preserve one raw deployment-property assignment."""
         return DeploymentParameter(name=name, value=value)
 
     @staticmethod
     @v_args(inline=True)
-    def fd_valid_id(name: object) -> ValidIdentifier:
+    def fd_valid_id(name: object) -> Identifier:
         """Build an identifier using the FDEPL keyword set."""
-        return ValidIdentifier(str(name))
+        return franca_identifier(name)
 
     @staticmethod
-    def fd_fqn(names: list[ValidIdentifier]) -> FullyQualifiedName:
+    def fd_fqn(names: list[Identifier]) -> QualifiedName:
         """Build an FDEPL fully qualified name."""
-        return FullyQualifiedName(names=names)
+        return QualifiedName(tuple(names))
 
     @staticmethod
     @v_args(inline=True)
-    def fd_keywords(keyword: object) -> ValidIdentifier:
+    def fd_keywords(keyword: object) -> Identifier:
         """Build an escaped FDEPL keyword identifier."""
-        return ValidIdentifier(str(keyword))
+        return franca_identifier(keyword)

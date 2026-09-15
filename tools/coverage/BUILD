@@ -10,11 +10,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_python//python:defs.bzl", "py_library")
 
-py_library(
-    name = "ecu_model",
-    srcs = glob(["**/*.py"]),
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "lcov_to_cobertura",
+    srcs = ["lcov_to_cobertura.py"],
     visibility = ["//visibility:public"],
-    deps = ["@pypi//pydantic"],
+    deps = ["@pypi//lcov_cobertura"],
 )

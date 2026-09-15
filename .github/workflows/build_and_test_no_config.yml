@@ -49,3 +49,38 @@ jobs:
 
       - name: Build module_integration_test
         run: cd test && bazel build //... && bazel mod deps --lockfile_mode=update
+
+  pycoverage:
+    name: Code Coverage
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # Required by actions/upload-code-coverage to publish results to Code Quality.
+      code-quality: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          # Check out the PR head commit (not the merge commit) so coverage line
+          # numbers map onto the diff shown in the pull request.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Prepare Bazel Environment
+        uses: ./.github/actions/prepare_bazel_environment
+
+      - name: Run tests with coverage
+        # Coverage flags (instrumentation filter, combined lcov report) live in .bazelrc.
+        run: bazel coverage //score/...
+
+      - name: Convert lcov report to Cobertura XML
+        # GitHub Code Quality only ingests Cobertura, Bazel only emits lcov.
+        run: bazel run //tools/coverage:lcov_to_cobertura
+
+      - name: Upload coverage report
+        # Forks cannot write to Code Quality, so skip the upload for them.
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage.xml
+          language: Python
+          label: code-coverage/bazel
+          fail-on-error: false
