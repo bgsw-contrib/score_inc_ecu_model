@@ -10,23 +10,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-load("@rules_python//python:defs.bzl", "py_library")
 
-py_library(
-    name = "ecu_model",
-    srcs = ["model.py"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@pypi//pydantic",
-    ],
-)
+from pydantic import BaseModel, Field, field_validator
 
-py_library(
-    name = "common",
-    srcs = [
-        "common/__init__.py",
-        "common/version.py",
-    ],
-    visibility = ["//visibility:public"],
-    deps = ["@pypi//pydantic"],
-)
+
+class _DeploymentBinding(BaseModel):
+    """Deployment properties attached to a declared interface member."""
+
+    deployment_properties: dict[str, object] = Field(default_factory=dict)
+
+    @field_validator("deployment_properties")
+    @classmethod
+    def _validate_property_names(cls, value: dict[str, object]) -> dict[str, object]:
+        if any(not key.strip() for key in value):
+            raise ValueError("deployment property names must not be empty")
+        return value
