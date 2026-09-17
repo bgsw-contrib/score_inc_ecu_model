@@ -16,5 +16,29 @@ py_library(
     name = "ecu_model",
     srcs = ["model.py"],
     visibility = ["//visibility:public"],
+    deps = [
+        "@pypi//pydantic",
+    ],
+)
+
+py_library(
+    name = "interface",
+    srcs = ["interface.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":common",
+        ":ecu_model",
+        "//score/ecu_model/data_types",
+        "@pypi//pydantic",
+    ],
+)
+
+py_library(
+    name = "common",
+    srcs = [
+        "common/__init__.py",
+        "common/version.py",
+    ],
+    visibility = ["//visibility:public"],
     deps = ["@pypi//pydantic"],
 )
