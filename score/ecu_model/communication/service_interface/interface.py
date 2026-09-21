@@ -47,15 +47,8 @@ class Method(BaseModel):
     name: Identifier
     inputs: list[DataTypeField] = Field(default_factory=list)
     outputs: list[DataTypeField] = Field(default_factory=list)
-    errors: EnumDataType | None = None
-    error_enum: DataTypeReference | None = None
+    return_values: EnumDataType | DataTypeReference | None = None
     fire_and_forget: bool = False
-
-    @model_validator(mode="after")
-    def _validate_single_error_definition(self) -> "Method":
-        if self.errors is not None and self.error_enum is not None:
-            raise ValueError("method must define either errors or error_enum, not both")
-        return self
 
 
 class BroadcastBinding(_DeploymentBinding):

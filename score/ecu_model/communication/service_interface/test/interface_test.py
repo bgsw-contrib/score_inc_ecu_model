@@ -67,14 +67,6 @@ class TestInterface(unittest.TestCase):
                 broadcast_bindings={"Unknown": BroadcastBinding()},
             )
 
-    def test_method_cannot_define_two_error_sources(self) -> None:
-        with self.assertRaises(ValidationError):
-            Method(
-                name="Reset",
-                errors={},
-                error_enum="ResetError",
-            )
-
 
 if __name__ == "__main__":
     unittest.main()

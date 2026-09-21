@@ -44,10 +44,10 @@ classDiagram
     Attribute --> DataTypeBase : data_type
     Attribute --> PrimitiveDataType : data_type
     Attribute --> QualifiedName : data_type
-    Method --> Identifier : name, error_enum
+    Method --> Identifier : name, return_values
     Method --> DataTypeField : inputs, outputs
-    Method --> EnumDataType : errors
-    Method --> QualifiedName : error_enum
+    Method --> EnumDataType : return_values
+    Method --> QualifiedName : return_values
     InterfaceDesign --> Identifier : name, broadcasts, attributes, methods
     InterfaceDesign --> QualifiedName : namespace
     InterfaceDesign --> Version : version
@@ -179,15 +179,8 @@ Named service method with input, output, and error definitions.
 | `name` | [`Identifier`](#identifier) | _required_ |  |
 | `inputs` | list[[`DataTypeField`](#datatypefield)] | `list()` |  |
 | `outputs` | list[[`DataTypeField`](#datatypefield)] | `list()` |  |
-| `errors` | [`EnumDataType`](#enumdatatype) \| None | `None` |  |
-| `error_enum` | [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) \| None | `None` |  |
+| `return_values` | [`EnumDataType`](#enumdatatype) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) \| None | `None` |  |
 | `fire_and_forget` | `bool` | `False` |  |
-
-**Validators**
-
-| Validator | Kind | Applies to | Description |
-| --- | --- | --- | --- |
-| `_validate_single_error_definition` | model, after | _the whole model_ | Validates the model as a whole. |
 
 ### `BroadcastBinding`
 
