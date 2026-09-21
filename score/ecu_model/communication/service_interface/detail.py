@@ -15,7 +15,10 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class _DeploymentBinding(BaseModel):
-    """Deployment properties attached to a declared interface member."""
+    """
+    Base class for concrete communication deployment bindings. Must not be instantiated
+    directly, concrete bindings must inherit from this class.
+    """
 
     deployment_properties: dict[str, object] = Field(default_factory=dict)
 

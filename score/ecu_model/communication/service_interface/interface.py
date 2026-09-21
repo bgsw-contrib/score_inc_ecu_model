@@ -25,30 +25,38 @@ from score.ecu_model.model import ModelElement
 
 
 class Broadcast(BaseModel):
-    """Named service broadcast carrying zero or more output data types."""
+    """Named service broadcast / event carrying zero or more output data types."""
 
     name: Identifier
     outputs: list[DataTypeField] = Field(default_factory=list)
 
 
 class Attribute(BaseModel):
-    """Named service attribute with Franca access qualifiers."""
+    """Named service attribute field with access properties."""
 
     name: Identifier
-    data_type: DataTypeOrReference
-    access_q_readonly: bool = False
-    access_q_noread: bool = False
-    access_q_nosubscriptions: bool = False
+    data_type: DataTypeOrReference = Field(..., description="Specifies the data type of the attribute")
+    has_getter: bool = Field(default=True, description="Indicates if the attribute has a getter method")
+    has_setter: bool = Field(default=True, description="Indicates if the attribute has a setter method")
+    subscribable: bool = Field(default=True, description="Indicates if the attribute can be subscribed to")
 
 
 class Method(BaseModel):
     """Named service method with input, output, and error definitions."""
 
     name: Identifier
-    inputs: list[DataTypeField] = Field(default_factory=list)
-    outputs: list[DataTypeField] = Field(default_factory=list)
-    return_values: EnumDataType | DataTypeReference | None = None
-    fire_and_forget: bool = False
+    inputs: list[DataTypeField] = Field(
+        default_factory=list, description="Specifies the input data types of the method"
+    )
+    outputs: list[DataTypeField] = Field(
+        default_factory=list, description="Specifies the output data types of the method"
+    )
+    error_return_codes: EnumDataType | DataTypeReference | None = Field(
+        default=None, description="Specifies the error return codes of the method"
+    )
+    fire_and_forget: bool = Field(
+        default=False, description="Indicates if the method requires acknowledgment on bus level"
+    )
 
 
 class BroadcastBinding(_DeploymentBinding):
@@ -63,7 +71,7 @@ class MethodBinding(_DeploymentBinding):
     """Deployment metadata attached to a service method."""
 
 
-class InterfaceDesign(ModelElement):
+class InterfaceDefinition(ModelElement):
     """Reusable design-time declaration of an interface."""
 
     name: Identifier
@@ -76,13 +84,17 @@ class InterfaceDesign(ModelElement):
     @model_validator(mode="before")
     @classmethod
     def _coerce_namespace(cls, data: object) -> object:
+        """
+        Allow for specifying the namespace as a simple dot-separated string instead of a QualifiedName object during construction.
+        """
         if isinstance(data, dict) and isinstance(data.get("namespace"), str):
             data = dict(data)
             data["namespace"] = QualifiedName(tuple(Identifier(part) for part in data["namespace"].split(".")))
         return data
 
     @model_validator(mode="after")
-    def _validate_member_keys(self) -> "InterfaceDesign":
+    def _validate_member_keys(self) -> "InterfaceDefinition":
+        """Validate that the keys of all member dictionaries match the declared member names."""
         for members, kind in (
             (self.broadcasts, "broadcast"),
             (self.attributes, "attribute"),
@@ -94,16 +106,16 @@ class InterfaceDesign(ModelElement):
 
     @property
     def fully_qualified_name(self) -> str:
-        """Return the dot-separated Franca interface name."""
+        """Return the dot-separated interface name."""
         return QualifiedName((*self.namespace.names, self.name)).as_str
 
 
 class Interface(ModelElement):
-    """Deployment metadata for an interface design."""
+    """Concrete deployment of an InterfaceDefinition."""
 
     name: Identifier
     namespace: QualifiedName = Field(default_factory=QualifiedName)
-    design_element: InterfaceDesign
+    design_element: InterfaceDefinition
     service_id: int | None = Field(default=None, ge=0, strict=True)
     deployment_properties: dict[str, object] = Field(default_factory=dict)
     broadcast_bindings: dict[Identifier, BroadcastBinding] = Field(default_factory=dict)
@@ -113,6 +125,9 @@ class Interface(ModelElement):
     @model_validator(mode="before")
     @classmethod
     def _coerce_namespace(cls, data: object) -> object:
+        """
+        Allow for specifying the namespace as a simple dot-separated string instead of a QualifiedName object during construction.
+        """
         if isinstance(data, dict) and isinstance(data.get("namespace"), str):
             data = dict(data)
             data["namespace"] = QualifiedName(tuple(Identifier(part) for part in data["namespace"].split(".")))
@@ -127,11 +142,20 @@ class Interface(ModelElement):
 
     @model_validator(mode="after")
     def _validate_member_bindings(self) -> "Interface":
+        """
+        Validate that all member bindings reference declared members in the interface design element
+        and all declared members are covered by bindings.
+        Raises a ValueError in case of dangling bindings or interface members.
+        """
         for bindings, members, kind in (
             (self.broadcast_bindings, self.design_element.broadcasts, "broadcast"),
             (self.attribute_bindings, self.design_element.attributes, "attribute"),
             (self.method_bindings, self.design_element.methods, "method"),
         ):
-            if any(name not in members for name in bindings):
+            binding_names = set(bindings)
+            member_names = set(members)
+            if binding_names - member_names:
                 raise ValueError(f"interface {kind} bindings must reference declared {kind}s")
+            if member_names - binding_names:
+                raise ValueError(f"interface {kind} bindings must cover all declared {kind}s")
         return self

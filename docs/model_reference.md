@@ -24,7 +24,7 @@ Inheritance (`<|--`) and references between the documented types; members are om
 
 ```mermaid
 classDiagram
-    ModelElement <|-- InterfaceDesign
+    ModelElement <|-- InterfaceDefinition
     ModelElement <|-- Interface
     DataTypeBase <|-- ArrayDataType
     ModelElement <|-- DataTypeBase
@@ -44,19 +44,19 @@ classDiagram
     Attribute --> DataTypeBase : data_type
     Attribute --> PrimitiveDataType : data_type
     Attribute --> QualifiedName : data_type
-    Method --> Identifier : name, return_values
+    Method --> Identifier : name, error_return_codes
     Method --> DataTypeField : inputs, outputs
-    Method --> EnumDataType : return_values
-    Method --> QualifiedName : return_values
-    InterfaceDesign --> Identifier : name, broadcasts, attributes, methods
-    InterfaceDesign --> QualifiedName : namespace
-    InterfaceDesign --> Version : version
-    InterfaceDesign --> Broadcast : broadcasts
-    InterfaceDesign --> Attribute : attributes
-    InterfaceDesign --> Method : methods
+    Method --> EnumDataType : error_return_codes
+    Method --> QualifiedName : error_return_codes
+    InterfaceDefinition --> Identifier : name, broadcasts, attributes, methods
+    InterfaceDefinition --> QualifiedName : namespace
+    InterfaceDefinition --> Version : version
+    InterfaceDefinition --> Broadcast : broadcasts
+    InterfaceDefinition --> Attribute : attributes
+    InterfaceDefinition --> Method : methods
     Interface --> Identifier : name, broadcast_bindings, attribute_bindings, method_bindings
     Interface --> QualifiedName : namespace
-    Interface --> InterfaceDesign : design_element
+    Interface --> InterfaceDefinition : design_element
     Interface --> BroadcastBinding : broadcast_bindings
     Interface --> AttributeBinding : attribute_bindings
     Interface --> MethodBinding : method_bindings
@@ -141,7 +141,7 @@ Return a >= b.  Computed by @total_ordering from (not a < b).
 
 Inherits from `BaseModel`.
 
-Named service broadcast carrying zero or more output data types.
+Named service broadcast / event carrying zero or more output data types.
 
 **Fields**
 
@@ -154,17 +154,17 @@ Named service broadcast carrying zero or more output data types.
 
 Inherits from `BaseModel`.
 
-Named service attribute with Franca access qualifiers.
+Named service attribute field with access properties.
 
 **Fields**
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `name` | [`Identifier`](#identifier) | _required_ |  |
-| `data_type` | [`PrimitiveDataType`](#primitivedatatype) \| [`DataTypeBase`](#datatypebase) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) | _required_ |  |
-| `access_q_readonly` | `bool` | `False` |  |
-| `access_q_noread` | `bool` | `False` |  |
-| `access_q_nosubscriptions` | `bool` | `False` |  |
+| `data_type` | [`PrimitiveDataType`](#primitivedatatype) \| [`DataTypeBase`](#datatypebase) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) | _required_ | Specifies the data type of the attribute |
+| `has_getter` | `bool` | `True` | Indicates if the attribute has a getter method |
+| `has_setter` | `bool` | `True` | Indicates if the attribute has a setter method |
+| `subscribable` | `bool` | `True` | Indicates if the attribute can be subscribed to |
 
 ### `Method`
 
@@ -177,10 +177,10 @@ Named service method with input, output, and error definitions.
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `name` | [`Identifier`](#identifier) | _required_ |  |
-| `inputs` | list[[`DataTypeField`](#datatypefield)] | `list()` |  |
-| `outputs` | list[[`DataTypeField`](#datatypefield)] | `list()` |  |
-| `return_values` | [`EnumDataType`](#enumdatatype) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) \| None | `None` |  |
-| `fire_and_forget` | `bool` | `False` |  |
+| `inputs` | list[[`DataTypeField`](#datatypefield)] | `list()` | Specifies the input data types of the method |
+| `outputs` | list[[`DataTypeField`](#datatypefield)] | `list()` | Specifies the output data types of the method |
+| `error_return_codes` | [`EnumDataType`](#enumdatatype) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) \| None | `None` | Specifies the error return codes of the method |
+| `fire_and_forget` | `bool` | `False` | Indicates if the method requires acknowledgment on bus level |
 
 ### `BroadcastBinding`
 
@@ -200,7 +200,7 @@ Inherits from `_DeploymentBinding`.
 
 Deployment metadata attached to a service method.
 
-### `InterfaceDesign`
+### `InterfaceDefinition`
 
 Inherits from [`ModelElement`](#modelelement).
 
@@ -221,20 +221,20 @@ Reusable design-time declaration of an interface.
 
 | Validator | Kind | Applies to | Description |
 | --- | --- | --- | --- |
-| `_coerce_namespace` | model, before | _the whole model_ | Validates the model as a whole. |
-| `_validate_member_keys` | model, after | _the whole model_ | Validates the model as a whole. |
+| `_coerce_namespace` | model, before | _the whole model_ | Allow for specifying the namespace as a simple dot-separated string instead of a QualifiedName object during construction. |
+| `_validate_member_keys` | model, after | _the whole model_ | Validate that the keys of all member dictionaries match the declared member names. |
 
 #### `fully_qualified_name`
 
 _property_
 
-Return the dot-separated Franca interface name.
+Return the dot-separated interface name.
 
 ### `Interface`
 
 Inherits from [`ModelElement`](#modelelement).
 
-Deployment metadata for an interface design.
+Concrete deployment of an InterfaceDefinition.
 
 **Fields**
 
@@ -242,7 +242,7 @@ Deployment metadata for an interface design.
 | --- | --- | --- | --- |
 | `name` | [`Identifier`](#identifier) | _required_ |  |
 | `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` |  |
-| `design_element` | [`InterfaceDesign`](#interfacedesign) | _required_ |  |
+| `design_element` | [`InterfaceDefinition`](#interfacedefinition) | _required_ |  |
 | `service_id` | `int \| None` | `None` |  |
 | `deployment_properties` | `dict[str, object]` | `dict()` |  |
 | `broadcast_bindings` | dict[[`Identifier`](#identifier), [`BroadcastBinding`](#broadcastbinding)] | `dict()` |  |
@@ -254,8 +254,8 @@ Deployment metadata for an interface design.
 | Validator | Kind | Applies to | Description |
 | --- | --- | --- | --- |
 | `_validate_property_names` | field, after | `deployment_properties` | Validates `deployment_properties`. |
-| `_coerce_namespace` | model, before | _the whole model_ | Validates the model as a whole. |
-| `_validate_member_bindings` | model, after | _the whole model_ | Validates the model as a whole. |
+| `_coerce_namespace` | model, before | _the whole model_ | Allow for specifying the namespace as a simple dot-separated string instead of a QualifiedName object during construction. |
+| `_validate_member_bindings` | model, after | _the whole model_ | Validate that all member bindings reference declared members in the interface design element and all declared members are covered by bindings. Raises a ValueError in case of dangling bindings or interface members. |
 
 ## `score.ecu_model.data_types.array`
 
