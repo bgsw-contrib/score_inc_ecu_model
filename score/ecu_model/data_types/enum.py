@@ -22,7 +22,6 @@ from score.ecu_model.data_types.common import (
     DataTypeSource,
     Identifier,
 )
-from score.ecu_model.data_types.primitives import PrimitiveDataType
 from score.ecu_model.model import ModelElement
 
 
@@ -39,6 +38,10 @@ class EnumValue(ModelElement):
         default=None,
         description="Optional numeric value assigned to the enum literal; "
         "may be negative, e.g. Franca allows signed enumerator expressions",
+    )
+    deployment_properties: dict[str, object] = Field(
+        default_factory=dict,
+        description="Deployment properties defined for this enum literal",
     )
 
     @field_validator("value", mode="before")
@@ -59,9 +62,17 @@ class EnumDataType(DataTypeBase):
         description="Optional enum definition extended by this enum; "
         "may temporarily be an unresolved reference during model resolution",
     )
-    underlying_type: PrimitiveDataType = Field(
-        default=PrimitiveDataType.UINT32,
-        description="Primitive type used for enum storage",
+    size: int = Field(
+        default=32,
+        description="Bit width used for enum storage",
+    )
+    signed: bool = Field(
+        default=False,
+        description="Whether enum storage is signed",
+    )
+    allow_value_aliases: bool = Field(
+        default=False,
+        description="Whether multiple enum literals may declare the same numeric value",
     )
     values: tuple[EnumValue, ...] = Field(
         default_factory=tuple,
@@ -70,7 +81,11 @@ class EnumDataType(DataTypeBase):
 
     @field_validator("values")
     @classmethod
-    def _validate_value_definitions(cls, values: tuple[EnumValue, ...]) -> tuple[EnumValue, ...]:
+    def _validate_value_definitions(
+        cls,
+        values: tuple[EnumValue, ...],
+        info: ValidationInfo,
+    ) -> tuple[EnumValue, ...]:
         """Validate enum literal value definitions and uniqueness."""
         has_explicit_values = any(enum_value.value is not None for enum_value in values)
         has_implicit_values = any(enum_value.value is None for enum_value in values)
@@ -80,7 +95,7 @@ class EnumDataType(DataTypeBase):
         if len(identifiers) != len(set(identifiers)):
             raise ValueError("enum value identifiers must be unique")
         explicit_values = [enum_value.value for enum_value in values if enum_value.value is not None]
-        if len(explicit_values) != len(set(explicit_values)):
+        if len(explicit_values) != len(set(explicit_values)) and not info.data.get("allow_value_aliases", False):
             raise ValueError("explicit enum values must be unique")
         return values
 

@@ -17,7 +17,6 @@ from pydantic import ValidationError
 
 from score.ecu_model.data_types.common import DataTypeKind, DataTypeSource
 from score.ecu_model.data_types.enum import EnumDataType, EnumValue
-from score.ecu_model.data_types.primitives import PrimitiveDataType
 from score.ecu_model.data_types.struct import StructDataType
 
 
@@ -26,7 +25,7 @@ class TestEnumDataType(unittest.TestCase):
     def _value(identifier: str, value: int | None = None) -> EnumValue:
         return EnumValue(name=identifier, value=value)
 
-    def test_defaults_to_uint32_and_keeps_declared_literals(self) -> None:
+    def test_defaults_to_unsigned_32_bit_storage_and_keeps_declared_literals(self) -> None:
         data_type = EnumDataType(
             name="Gear",
             source_kind=DataTypeSource.FRANCA,
@@ -34,12 +33,33 @@ class TestEnumDataType(unittest.TestCase):
         )
 
         self.assertEqual(data_type.kind, DataTypeKind.ENUM)
-        self.assertEqual(data_type.underlying_type, PrimitiveDataType.UINT32)
+        self.assertEqual(data_type.size, 32)
+        self.assertFalse(data_type.signed)
         self.assertIsInstance(data_type.values, tuple)
         self.assertEqual(str(data_type.values[0].name), "PARK")
         self.assertEqual(data_type.values[0].value, 0)
         self.assertEqual(str(data_type.values[1].name), "DRIVE")
         self.assertEqual(data_type.values[1].value, 1)
+
+    def test_retains_declared_enum_storage_properties(self) -> None:
+        data_type = EnumDataType(
+            name="Gear",
+            source_kind=DataTypeSource.PROTOBUF,
+            size=8,
+            signed=True,
+        )
+
+        self.assertEqual(data_type.size, 8)
+        self.assertTrue(data_type.signed)
+
+    def test_retains_deployment_properties_for_each_literal(self) -> None:
+        enum_value = EnumValue(
+            name="DRIVE",
+            value=1,
+            deployment_properties={"protobuf.deprecated": True},
+        )
+
+        self.assertEqual(enum_value.deployment_properties, {"protobuf.deprecated": True})
 
     def test_allows_literal_value_assignment(self) -> None:
         data_type = EnumDataType(
@@ -90,6 +110,17 @@ class TestEnumDataType(unittest.TestCase):
                 source_kind=DataTypeSource.FRANCA,
                 values=[self._value("PARK", 0), self._value("DRIVE", 0)],
             )
+
+    def test_allows_duplicate_literal_values_when_enabled(self) -> None:
+        data_type = EnumDataType(
+            name="State",
+            source_kind=DataTypeSource.FRANCA,
+            allow_value_aliases=True,
+            values=[self._value("STATE_UNSPECIFIED", 0), self._value("STATE_UNKNOWN", 0)],
+        )
+
+        self.assertTrue(data_type.allow_value_aliases)
+        self.assertEqual([enum_value.value for enum_value in data_type.values], [0, 0])
 
     def test_supports_extending_another_declared_enum(self) -> None:
         parent = EnumDataType(name="BaseGear", source_kind=DataTypeSource.FRANCA)

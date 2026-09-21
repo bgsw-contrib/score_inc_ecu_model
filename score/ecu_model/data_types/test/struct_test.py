@@ -15,6 +15,7 @@ import unittest
 
 from score.ecu_model.data_types.common import DataTypeKind, DataTypeSource
 from score.ecu_model.data_types.composite import DataTypeField
+from score.ecu_model.data_types.enum import EnumDataType
 from score.ecu_model.data_types.primitives import PrimitiveDataType
 from score.ecu_model.data_types.struct import StructDataType
 
@@ -56,6 +57,21 @@ class TestStructDataType(unittest.TestCase):
         )
 
         self.assertIs(data_type.fields[0].data_type, nested)
+
+    def test_keeps_directly_nested_structs_and_enums(self) -> None:
+        nested_struct = StructDataType(name="Sample", source_kind=DataTypeSource.PROTOBUF)
+        nested_enum = EnumDataType(name="State", source_kind=DataTypeSource.PROTOBUF)
+        data_type = StructDataType(
+            name="Envelope",
+            source_kind=DataTypeSource.PROTOBUF,
+            nested_enums=[nested_enum],
+            nested_structs=[nested_struct],
+        )
+
+        self.assertIsInstance(data_type.nested_enums, tuple)
+        self.assertIsInstance(data_type.nested_structs, tuple)
+        self.assertIs(data_type.nested_enums[0], nested_enum)
+        self.assertIs(data_type.nested_structs[0], nested_struct)
 
     def test_prevents_in_place_field_mutation(self) -> None:
         data_type = StructDataType(

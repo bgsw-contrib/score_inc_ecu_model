@@ -18,9 +18,18 @@ from pydantic import Field
 
 from score.ecu_model.data_types.common import DataTypeKind
 from score.ecu_model.data_types.composite import CompositeDataType
+from score.ecu_model.data_types.enum import EnumDataType
 
 
 class StructDataType(CompositeDataType):
     """A declared struct data type with named fields."""
 
     kind: Literal[DataTypeKind.STRUCT] = Field(default=DataTypeKind.STRUCT, frozen=True)
+    nested_enums: tuple[EnumDataType, ...] = Field(
+        default_factory=tuple,
+        description="Enums declared directly within this struct",
+    )
+    nested_structs: tuple[StructDataType, ...] = Field(
+        default_factory=tuple,
+        description="Structs declared directly within this struct",
+    )

@@ -67,16 +67,16 @@ class TestCompositeDataType(unittest.TestCase):
                 fields=[self._field("field"), self._field("field")],
             )
 
-    def test_rejects_inconsistent_or_duplicate_field_numbers(self) -> None:
-        with self.assertRaisesRegex(
-            ValidationError, "field numbers must either all be explicitly defined or all be omitted"
-        ):
-            StructDataType(
-                name="Position",
-                source_kind=DataTypeSource.PROTOBUF,
-                fields=[self._field("x", 1), self._field("y")],
-            )
+    def test_allows_mixed_field_numbers(self) -> None:
+        data_type = StructDataType(
+            name="Position",
+            source_kind=DataTypeSource.PROTOBUF,
+            fields=[self._field("x", 1), self._field("y")],
+        )
 
+        self.assertEqual([field.field_number for field in data_type.fields], [1, None])
+
+    def test_rejects_duplicate_field_numbers(self) -> None:
         with self.assertRaisesRegex(ValidationError, "explicit field numbers must be unique"):
             StructDataType(
                 name="Position",

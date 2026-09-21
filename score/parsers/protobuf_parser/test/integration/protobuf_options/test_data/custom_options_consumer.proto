@@ -1,0 +1,93 @@
+// *******************************************************************************
+// Copyright (c) 2026 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
+
+syntax = "proto3";
+
+package integration.deployment;
+
+import "custom_options.proto";
+
+option (integration.deployment.file_deployment).scope = "file";
+option (integration.deployment.file_deployment).description = "File description";
+
+message ConfiguredRequest {
+  option (integration.deployment.message_deployment).scope = "message";
+  option (integration.deployment.message_deployment).description = "Request description";
+
+  string payload = 1 [
+    (integration.deployment.field_deployment).transport = "in_memory",
+    (integration.deployment.field_deployment).queue_depth = 16,
+    (integration.deployment.field_deployment).description = "Payload description",
+    (integration.deployment.field_deployment).description = "Payload continuation"
+  ];
+
+  repeated string bounded_payloads = 2 [
+    (integration.deployment.field_deployment).max_count = 32
+  ];
+
+  oneof alternative {
+    option (oneof_deployment).scope = "oneof";
+    option (integration.deployment.oneof_deployment).description = "Alternative description";
+
+    string alternative_payload = 3;
+  }
+}
+
+message NestedTypeContainer {
+  message NestedPayload {
+    string value = 1;
+  }
+
+  enum NestedState {
+    NESTED_STATE_UNSPECIFIED = 0;
+    NESTED_STATE_ACTIVE = 1;
+  }
+}
+
+enum TopLevelState {
+  TOP_LEVEL_STATE_UNSPECIFIED = 0;
+  TOP_LEVEL_STATE_ACTIVE = 1;
+}
+
+message NestedTypeConsumer {
+  NestedTypeContainer.NestedPayload payload = 1;
+  NestedTypeContainer.NestedState state = 2;
+  TopLevelState top_level_state = 3;
+}
+
+message FileDescriptionDefault {
+  string value = 1;
+}
+
+enum ConfiguredState {
+  option (integration.deployment.enum_deployment).scope = "enum";
+  option (integration.deployment.enum_deployment).description = "State description";
+  option (integration.deployment.enum_deployment).size = ES_8;
+
+  CONFIGURED_STATE_UNSPECIFIED = 0 [
+    (integration.deployment.enum_value_deployment).scope = "enum_value",
+    (integration.deployment.enum_value_deployment).description = "Unspecified state"
+  ];
+}
+
+enum ConfiguredState16 {
+  option (integration.deployment.enum_deployment).size = ES_16;
+
+  CONFIGURED_STATE_16_UNSPECIFIED = 0;
+}
+
+enum ConfiguredState32 {
+  option (integration.deployment.enum_deployment).size = ES_32;
+
+  CONFIGURED_STATE_32_UNSPECIFIED = 0;
+}

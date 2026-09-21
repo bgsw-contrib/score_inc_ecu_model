@@ -85,12 +85,11 @@ class CompositeDataType(DataTypeBase):
 
     @field_validator("fields")
     @classmethod
-    def _validate_field_definitions(cls, fields: tuple[DataTypeField, ...]) -> tuple[DataTypeField, ...]:
+    def _validate_field_definitions(
+        cls,
+        fields: tuple[DataTypeField, ...],
+    ) -> tuple[DataTypeField, ...]:
         """Validate field definitions and uniqueness."""
-        has_explicit_numbers = any(field.field_number is not None for field in fields)
-        has_implicit_numbers = any(field.field_number is None for field in fields)
-        if has_explicit_numbers and has_implicit_numbers:
-            raise ValueError("field numbers must either all be explicitly defined or all be omitted")
         identifiers = [field.name for field in fields]
         if len(identifiers) != len(set(identifiers)):
             raise ValueError("field identifiers must be unique")

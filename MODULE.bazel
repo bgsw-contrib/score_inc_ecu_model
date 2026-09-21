@@ -13,8 +13,10 @@
 module(name = "score_ecu_model")
 
 # Dependencies that will get propagated to our users as transitive dependencies
+bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "protobuf", version = "29.5", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "score_tooling", version = "2.0.1")
 
@@ -37,3 +39,18 @@ pip.parse(
     requirements_lock = "//:requirements_lock.txt",
 )
 use_repo(pip, "pypi")
+
+#################
+##  Overrides  ##
+#################
+
+# Using newer versions requires updating protobuf as well
+single_version_override(
+    module_name = "abseil-cpp",
+    version = "20250127.0",
+)
+
+single_version_override(
+    module_name = "protobuf",
+    version = "29.5",
+)
