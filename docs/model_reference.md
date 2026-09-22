@@ -24,6 +24,8 @@ Inheritance (`<|--`) and references between the documented types; members are om
 
 ```mermaid
 classDiagram
+    ModelElement <|-- InterfaceDefinition
+    ModelElement <|-- Interface
     DataTypeBase <|-- ArrayDataType
     ModelElement <|-- DataTypeBase
     ModelElement <|-- DataTypeField
@@ -36,6 +38,28 @@ classDiagram
     DataTypeBase <|-- TypedefDataType
     CompositeDataType <|-- UnionDataType
     ModelRegistry <|-- ModelElement
+    Broadcast --> Identifier : name
+    Broadcast --> DataTypeField : outputs
+    Attribute --> Identifier : name, data_type
+    Attribute --> DataTypeBase : data_type
+    Attribute --> PrimitiveDataType : data_type
+    Attribute --> QualifiedName : data_type
+    Method --> Identifier : name, error_return_codes
+    Method --> DataTypeField : inputs, outputs
+    Method --> EnumDataType : error_return_codes
+    Method --> QualifiedName : error_return_codes
+    InterfaceDefinition --> Identifier : name, broadcasts, attributes, methods
+    InterfaceDefinition --> QualifiedName : namespace
+    InterfaceDefinition --> Version : version
+    InterfaceDefinition --> Broadcast : broadcasts
+    InterfaceDefinition --> Attribute : attributes
+    InterfaceDefinition --> Method : methods
+    Interface --> Identifier : name, broadcast_bindings, attribute_bindings, method_bindings
+    Interface --> QualifiedName : namespace
+    Interface --> InterfaceDefinition : design_element
+    Interface --> BroadcastBinding : broadcast_bindings
+    Interface --> AttributeBinding : attribute_bindings
+    Interface --> MethodBinding : method_bindings
     ArrayDataType --> DataTypeBase : data_type
     ArrayDataType --> Identifier : data_type
     ArrayDataType --> PrimitiveDataType : data_type
@@ -68,6 +92,170 @@ classDiagram
     TypedefDataType --> PrimitiveDataType : data_type
     TypedefDataType --> QualifiedName : data_type
 ```
+
+## `score.ecu_model.common.version`
+
+### `Version`
+
+Inherits from `BaseModel`.
+
+Semantic version shared by ECU model objects.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `major` | `int` | `1` |  |
+| `minor` | `int` | `0` |  |
+| `patch` | `int` | `0` |  |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_validate_decimal_integer` | field, before | `major`, `minor`, `patch` | Validates `major`, `minor`, `patch`. |
+| `_validate_all_or_none_provided` | model, before | _the whole model_ | Validates the model as a whole. |
+| `_validate_at_least_one_non_zero` | model, after | _the whole model_ | Validates the model as a whole. |
+
+#### `__gt__(self, other)`
+
+_method_
+
+Return a > b.  Computed by @total_ordering from (not a < b) and (a != b).
+
+#### `__le__(self, other)`
+
+_method_
+
+Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).
+
+#### `__ge__(self, other)`
+
+_method_
+
+Return a >= b.  Computed by @total_ordering from (not a < b).
+
+## `score.ecu_model.communication.service_interface.interface`
+
+### `Broadcast`
+
+Inherits from `BaseModel`.
+
+Named service broadcast / event carrying zero or more output data types.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ |  |
+| `outputs` | list[[`DataTypeField`](#datatypefield)] | `list()` |  |
+
+### `Attribute`
+
+Inherits from `BaseModel`.
+
+Named service attribute field with access properties.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ |  |
+| `data_type` | [`PrimitiveDataType`](#primitivedatatype) \| [`DataTypeBase`](#datatypebase) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) | _required_ | Specifies the data type of the attribute |
+| `has_getter` | `bool` | `True` | Indicates if the attribute has a getter method |
+| `has_setter` | `bool` | `True` | Indicates if the attribute has a setter method |
+| `subscribable` | `bool` | `True` | Indicates if the attribute can be subscribed to |
+
+### `Method`
+
+Inherits from `BaseModel`.
+
+Named service method with input, output, and error definitions.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ |  |
+| `inputs` | list[[`DataTypeField`](#datatypefield)] | `list()` | Specifies the input data types of the method |
+| `outputs` | list[[`DataTypeField`](#datatypefield)] | `list()` | Specifies the output data types of the method |
+| `error_return_codes` | [`EnumDataType`](#enumdatatype) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) \| None | `None` | Specifies the error return codes of the method |
+| `fire_and_forget` | `bool` | `False` | Indicates if the method requires acknowledgment on bus level |
+
+### `BroadcastBinding`
+
+Inherits from `_DeploymentBinding`.
+
+Deployment metadata attached to a service broadcast.
+
+### `AttributeBinding`
+
+Inherits from `_DeploymentBinding`.
+
+Deployment metadata attached to a service attribute.
+
+### `MethodBinding`
+
+Inherits from `_DeploymentBinding`.
+
+Deployment metadata attached to a service method.
+
+### `InterfaceDefinition`
+
+Inherits from [`ModelElement`](#modelelement).
+
+Reusable design-time declaration of an interface.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ |  |
+| `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` |  |
+| `version` | [`Version`](#version) | _required_ |  |
+| `broadcasts` | dict[[`Identifier`](#identifier), [`Broadcast`](#broadcast)] | `dict()` |  |
+| `attributes` | dict[[`Identifier`](#identifier), [`Attribute`](#attribute)] | `dict()` |  |
+| `methods` | dict[[`Identifier`](#identifier), [`Method`](#method)] | `dict()` |  |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_coerce_namespace` | model, before | _the whole model_ | Allow for specifying the namespace as a simple dot-separated string instead of a QualifiedName object during construction. |
+| `_validate_member_keys` | model, after | _the whole model_ | Validate that the keys of all member dictionaries match the declared member names. |
+
+#### `fully_qualified_name`
+
+_property_
+
+Return the dot-separated interface name.
+
+### `Interface`
+
+Inherits from [`ModelElement`](#modelelement).
+
+Concrete deployment of an InterfaceDefinition.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ |  |
+| `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` |  |
+| `design_element` | [`InterfaceDefinition`](#interfacedefinition) | _required_ |  |
+| `service_id` | `int \| None` | `None` |  |
+| `deployment_properties` | `dict[str, object]` | `dict()` |  |
+| `broadcast_bindings` | dict[[`Identifier`](#identifier), [`BroadcastBinding`](#broadcastbinding)] | `dict()` |  |
+| `attribute_bindings` | dict[[`Identifier`](#identifier), [`AttributeBinding`](#attributebinding)] | `dict()` |  |
+| `method_bindings` | dict[[`Identifier`](#identifier), [`MethodBinding`](#methodbinding)] | `dict()` |  |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_validate_property_names` | field, after | `deployment_properties` | Validates `deployment_properties`. |
+| `_coerce_namespace` | model, before | _the whole model_ | Allow for specifying the namespace as a simple dot-separated string instead of a QualifiedName object during construction. |
+| `_validate_member_bindings` | model, after | _the whole model_ | Validate that all member bindings reference declared members in the interface design element and all declared members are covered by bindings. Raises a ValueError in case of dangling bindings or interface members. |
 
 ## `score.ecu_model.data_types.array`
 
