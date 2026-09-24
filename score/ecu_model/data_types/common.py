@@ -69,7 +69,7 @@ class DataTypeBase(ModelElement):
     )
     name: Identifier | None = Field(
         default=None,
-        description="Identifier of the data type; absent for inline arrays",
+        description="Identifier of the data type; absent for inline arrays and maps",
     )
     namespace: QualifiedName = Field(
         default_factory=QualifiedName,
@@ -88,7 +88,7 @@ class DataTypeBase(ModelElement):
         """Reject direct instantiation of the abstract base type."""
         if type(self) is DataTypeBase:
             raise TypeError("DataTypeBase is abstract, instantiate a concrete data type")
-        if self.name is None and self.kind != DataTypeKind.ARRAY:
+        if self.name is None and self.kind not in (DataTypeKind.ARRAY, DataTypeKind.MAP):
             raise ValueError("Input should be a valid string: declared data types require an identifier")
         super().model_post_init(context)
 

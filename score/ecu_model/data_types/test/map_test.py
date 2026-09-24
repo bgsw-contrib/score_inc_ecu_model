@@ -13,6 +13,8 @@
 
 import unittest
 
+from pydantic import ValidationError
+
 from score.ecu_model.data_types.common import DataTypeKind, DataTypeSource
 from score.ecu_model.data_types.map import MapDataType
 from score.ecu_model.data_types.primitives import PrimitiveDataType
@@ -30,8 +32,44 @@ class TestMapDataType(unittest.TestCase):
 
         self.assertEqual(map_type.kind, DataTypeKind.MAP)
         self.assertEqual(str(map_type.name), "StringToIntMap")
+        self.assertFalse(map_type.is_inline)
         self.assertEqual(map_type.key_type, PrimitiveDataType.STRING)
         self.assertEqual(map_type.value_type, PrimitiveDataType.INT32)
+
+    def test_creates_inline_map_without_identifier(self) -> None:
+        map_type = MapDataType(
+            source_kind=DataTypeSource.PROTOBUF,
+            key_type=PrimitiveDataType.STRING,
+            value_type=PrimitiveDataType.INT32,
+            is_inline=True,
+        )
+
+        self.assertIsNone(map_type.name)
+        self.assertTrue(map_type.is_inline)
+        self.assertEqual(map_type.key_type, PrimitiveDataType.STRING)
+        self.assertEqual(map_type.value_type, PrimitiveDataType.INT32)
+        with self.assertRaisesRegex(ValueError, "Data types without an identifier do not have a fully qualified name"):
+            _ = map_type.fully_qualified_name
+
+    def test_rejects_inline_map_with_identifier(self) -> None:
+        with self.assertRaises(ValidationError) as context:
+            MapDataType(
+                name="BadInline",
+                source_kind=DataTypeSource.FRANCA,
+                key_type=PrimitiveDataType.STRING,
+                value_type=PrimitiveDataType.INT32,
+                is_inline=True,
+            )
+        self.assertIn("inline maps must not have an identifier", str(context.exception))
+
+    def test_rejects_non_inline_map_without_identifier(self) -> None:
+        with self.assertRaises(ValidationError) as context:
+            MapDataType(
+                source_kind=DataTypeSource.FRANCA,
+                key_type=PrimitiveDataType.STRING,
+                value_type=PrimitiveDataType.INT32,
+            )
+        self.assertIn("non-inline maps require an identifier", str(context.exception))
 
     def test_supports_declared_type_ref_as_key_or_value_type(self) -> None:
         value_struct = StructDataType(name="Payload", source_kind=DataTypeSource.FRANCA)

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from score.ecu_model.data_types.common import DataTypeBase, DataTypeKind, DataTypeOrReference
 
@@ -29,3 +29,16 @@ class MapDataType(DataTypeBase):
     value_type: DataTypeOrReference = Field(
         description="Map value type definition; may temporarily be an unresolved reference during model resolution",
     )
+    is_inline: bool = Field(
+        default=False,
+        description="Whether the map is declared inline without a type name",
+    )
+
+    @model_validator(mode="after")
+    def _validate_map_constraints(self) -> MapDataType:
+        """Validate map naming constraints."""
+        if self.is_inline and self.name is not None:
+            raise ValueError("inline maps must not have an identifier")
+        if not self.is_inline and self.name is None:
+            raise ValueError("non-inline maps require an identifier")
+        return self

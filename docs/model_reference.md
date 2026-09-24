@@ -79,7 +79,6 @@ classDiagram
     EnumValue --> Identifier : name
     EnumDataType --> Identifier : extends
     EnumDataType --> QualifiedName : extends
-    EnumDataType --> PrimitiveDataType : underlying_type
     EnumDataType --> EnumValue : values
     ExternalDataType --> DataTypeSource : source_kind
     QualifiedName --> Identifier : root
@@ -87,6 +86,7 @@ classDiagram
     MapDataType --> Identifier : key_type, value_type
     MapDataType --> PrimitiveDataType : key_type, value_type
     MapDataType --> QualifiedName : key_type, value_type
+    StructDataType --> EnumDataType : nested_enums
     TypedefDataType --> DataTypeBase : data_type
     TypedefDataType --> Identifier : data_type
     TypedefDataType --> PrimitiveDataType : data_type
@@ -348,7 +348,7 @@ Shared metadata for data types that are declared in a source language.
 | --- | --- | --- | --- |
 | `kind` | [`DataTypeKind`](#datatypekind) | _required_ | Discriminator identifying the concrete data type definition kind |
 | `source_kind` | [`DataTypeSource`](#datatypesource) | _required_ | Origin of the data type definition, e.g. franca, protobuf, etc. |
-| `name` | [`Identifier`](#identifier) \| None | `None` | Identifier of the data type; absent for inline arrays |
+| `name` | [`Identifier`](#identifier) \| None | `None` | Identifier of the data type; absent for inline arrays and maps |
 | `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Enclosing namespace segments, outer-to-inner |
 | `source_uri` | `str \| None` | `None` | Optional source file path which this data type definition was imported from |
 | `deployment_properties` | `dict[str, object]` | `dict()` | Deployment properties aggregated from all communication bindings using this data type |
@@ -437,6 +437,7 @@ A named enum literal with an optional numeric value.
 | --- | --- | --- | --- |
 | `name` | [`Identifier`](#identifier) | _required_ | Identifier of the enum literal in its source namespace |
 | `value` | `int \| None` | `None` | Optional numeric value assigned to the enum literal; may be negative, e.g. Franca allows signed enumerator expressions |
+| `deployment_properties` | `dict[str, object]` | `dict()` | Deployment properties defined for this enum literal |
 
 **Validators**
 
@@ -456,7 +457,9 @@ A declared enum data type with named literals.
 | --- | --- | --- | --- |
 | `kind` | Literal[[`DataTypeKind`](#datatypekind).ENUM] | `DataTypeKind.ENUM` |  |
 | `extends` | [`EnumDataType`](#enumdatatype) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) \| None | `None` | Optional enum definition extended by this enum; may temporarily be an unresolved reference during model resolution |
-| `underlying_type` | [`PrimitiveDataType`](#primitivedatatype) | `PrimitiveDataType.UINT32` | Primitive type used for enum storage |
+| `size` | `int` | `32` | Bit width used for enum storage |
+| `signed` | `bool` | `False` | Whether enum storage is signed |
+| `allow_value_aliases` | `bool` | `False` | Whether multiple enum literals may declare the same numeric value |
 | `values` | tuple[[`EnumValue`](#enumvalue), ...] | `tuple()` | Named enum literals, not changeable after creation |
 
 **Validators**
@@ -554,6 +557,13 @@ Definition of a map data type with key and value types.
 | `kind` | Literal[[`DataTypeKind`](#datatypekind).MAP] | `DataTypeKind.MAP` |  |
 | `key_type` | [`PrimitiveDataType`](#primitivedatatype) \| [`DataTypeBase`](#datatypebase) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) | _required_ | Map key type definition; may temporarily be an unresolved reference during model resolution |
 | `value_type` | [`PrimitiveDataType`](#primitivedatatype) \| [`DataTypeBase`](#datatypebase) \| [`Identifier`](#identifier) \| [`QualifiedName`](#qualifiedname) | _required_ | Map value type definition; may temporarily be an unresolved reference during model resolution |
+| `is_inline` | `bool` | `False` | Whether the map is declared inline without a type name |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_validate_map_constraints` | model, after | _the whole model_ | Validate map naming constraints. |
 
 ## `score.ecu_model.data_types.primitives`
 
@@ -595,6 +605,8 @@ A declared struct data type with named fields.
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `kind` | Literal[[`DataTypeKind`](#datatypekind).STRUCT] | `DataTypeKind.STRUCT` |  |
+| `nested_enums` | tuple[[`EnumDataType`](#enumdatatype), ...] | `tuple()` | Enums declared directly within this struct |
+| `nested_structs` | tuple[[`StructDataType`](#structdatatype), ...] | `tuple()` | Structs declared directly within this struct |
 
 ## `score.ecu_model.data_types.typedef`
 
