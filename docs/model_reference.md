@@ -30,6 +30,9 @@ classDiagram
     ModelElement <|-- CommunicationBinding
     ModelElement <|-- PortDefinition
     ModelElement <|-- MessageChannel
+    ModelElement <|-- Broadcast
+    ModelElement <|-- Attribute
+    ModelElement <|-- Method
     ModelElement <|-- InterfaceDefinition
     ModelElement <|-- ServiceInterface
     DataTypeBase <|-- ArrayDataType
@@ -370,7 +373,7 @@ A message port consumed by an application or activity.
 
 ### `Broadcast`
 
-Inherits from `BaseModel`.
+Inherits from [`ModelElement`](#modelelement).
 
 Named service broadcast / event carrying zero or more output data types.
 
@@ -383,7 +386,7 @@ Named service broadcast / event carrying zero or more output data types.
 
 ### `Attribute`
 
-Inherits from `BaseModel`.
+Inherits from [`ModelElement`](#modelelement).
 
 Named service attribute field with access properties.
 
@@ -399,7 +402,7 @@ Named service attribute field with access properties.
 
 ### `Method`
 
-Inherits from `BaseModel`.
+Inherits from [`ModelElement`](#modelelement).
 
 Named service method with input, output, and error definitions.
 
