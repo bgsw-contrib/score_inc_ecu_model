@@ -21,13 +21,16 @@ from score.ecu_model.communication.message_port import (
     ProvidedMessagePort,
     RequiredMessagePort,
 )
-from score.ecu_model.communication.protocol import ProtocolKind
+from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.model import ModelRegistry
 
 
 class TestMessagePort(unittest.TestCase):
     def setUp(self) -> None:
         ModelRegistry.elements.clear()
+
+    def _binding(self, protocol: ProtocolKind = ProtocolKind.MW_COM) -> CommunicationBinding:
+        return CommunicationBinding(protocol=protocol, network=NetworkKind.IPC)
 
     def _channel(self) -> MessageChannel:
         return MessageChannel(
@@ -38,46 +41,54 @@ class TestMessagePort(unittest.TestCase):
 
     def test_provided_message_port_preserves_payload_and_queue_metadata(self) -> None:
         channel = self._channel()
+        binding = self._binding(ProtocolKind.ARA_COM)
         port = ProvidedMessagePort(
             name="SpeedPort",
             channel=channel,
             debug_only=True,
             asil=AsilLevel.B,
-            protocol=ProtocolKind.ARA_COM,
+            binding=binding,
             max_published_messages=4,
         )
 
         self.assertEqual(port.name.as_str, "SpeedPort")
         self.assertIs(port.channel, channel)
+        self.assertIs(port.binding, binding)
         self.assertTrue(port.debug_only)
         self.assertEqual(port.asil, AsilLevel.B)
         self.assertEqual(port.max_published_messages, 4)
 
     def test_required_message_port_preserves_payload_and_queue_metadata(self) -> None:
         channel = self._channel()
+        binding = self._binding(ProtocolKind.MW_DIAG)
         port = RequiredMessagePort(
             name="SpeedPort",
             channel=channel,
             debug_only=True,
             asil=AsilLevel.D,
-            protocol=ProtocolKind.MW_DIAG,
+            binding=binding,
             max_required_messages=8,
         )
 
         self.assertEqual(port.name.as_str, "SpeedPort")
         self.assertIs(port.channel, channel)
+        self.assertIs(port.binding, binding)
         self.assertTrue(port.debug_only)
         self.assertEqual(port.asil, AsilLevel.D)
         self.assertEqual(port.max_required_messages, 8)
 
     def test_required_message_port_defaults(self) -> None:
         channel = self._channel()
-        port = RequiredMessagePort(name="SpeedPort", channel=channel, protocol=ProtocolKind.ARA_DIAG)
+        port = RequiredMessagePort(name="SpeedPort", channel=channel, binding=self._binding(ProtocolKind.ARA_DIAG))
 
         self.assertFalse(port.debug_only)
         self.assertEqual(port.asil, AsilLevel.QM)
         self.assertEqual(port.max_required_messages, 1)
         self.assertIs(port.channel, channel)
+
+    def test_message_port_requires_binding(self) -> None:
+        with self.assertRaises(ValidationError):
+            ProvidedMessagePort(name="SpeedPort", channel=self._channel())
 
     def test_queue_sizes_must_be_positive_integers(self) -> None:
         channel = self._channel()
@@ -85,7 +96,7 @@ class TestMessagePort(unittest.TestCase):
             ProvidedMessagePort(
                 name="SpeedPort",
                 channel=channel,
-                protocol=ProtocolKind.ARA_COM,
+                binding=self._binding(ProtocolKind.ARA_COM),
                 max_published_messages=0,
             )
 
@@ -93,7 +104,7 @@ class TestMessagePort(unittest.TestCase):
             ProvidedMessagePort(
                 name="SpeedPort",
                 channel=channel,
-                protocol=ProtocolKind.ARA_COM,
+                binding=self._binding(ProtocolKind.ARA_COM),
                 max_published_messages=-1,
             )
 
@@ -101,7 +112,7 @@ class TestMessagePort(unittest.TestCase):
             RequiredMessagePort(
                 name="SpeedPort",
                 channel=channel,
-                protocol=ProtocolKind.MW_COM,
+                binding=self._binding(),
                 max_required_messages=0,
             )
 
@@ -109,7 +120,7 @@ class TestMessagePort(unittest.TestCase):
             RequiredMessagePort(
                 name="SpeedPort",
                 channel=channel,
-                protocol=ProtocolKind.MW_COM,
+                binding=self._binding(),
                 max_required_messages=-1,
             )
 

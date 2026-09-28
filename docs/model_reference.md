@@ -25,11 +25,11 @@ Inheritance (`<|--`) and references between the documented types; members are om
 ```mermaid
 classDiagram
     class AsilLevel
-    class ProtocolKind
     class ProvidedMessagePort
     class ProvidedServicePort
     class RequiredMessagePort
     class RequiredServicePort
+    ModelElement <|-- CommunicationBinding
     ModelElement <|-- PortDefinition
     ModelElement <|-- MessageChannel
     ModelElement <|-- InterfaceDefinition
@@ -46,6 +46,8 @@ classDiagram
     DataTypeBase <|-- TypedefDataType
     CompositeDataType <|-- UnionDataType
     ModelRegistry <|-- ModelElement
+    CommunicationBinding --> ProtocolKind : protocol
+    CommunicationBinding --> NetworkKind : network
     PortDefinition --> InterfaceDefinition : interface_design
     MessageChannel --> Identifier : name, data_type
     MessageChannel --> QualifiedName : namespace, data_type
@@ -163,6 +165,49 @@ _method_
 
 Return a >= b.  Computed by @total_ordering from (not a < b).
 
+## `score.ecu_model.communication.binding`
+
+### `ProtocolKind`
+
+Inherits from `str`, `Enum`.
+
+Discriminator values for concrete communication binding models.
+
+**Members**
+
+| Member | Value |
+| --- | --- |
+| `ARA_COM` | `'ARA::COM'` |
+| `ARA_DIAG` | `'ARA::DIAG'` |
+| `MW_COM` | `'MW::COM'` |
+| `MW_DIAG` | `'MW::DIAG'` |
+
+### `NetworkKind`
+
+Inherits from `str`, `Enum`.
+
+Discriminator values for binding specific bus protocols
+
+**Members**
+
+| Member | Value |
+| --- | --- |
+| `SOMEIP` | `'SOMEIP'` |
+| `IPC` | `'IPC'` |
+
+### `CommunicationBinding`
+
+Inherits from [`ModelElement`](#modelelement).
+
+Generic core communication binding for all supported platform protocols.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `protocol` | [`ProtocolKind`](#protocolkind) | _required_ | Transport protocol identifier |
+| `network` | [`NetworkKind`](#networkkind) | _required_ | Optional underlying network transport, e.g. SOMEIP, IPC, or IPC_ASIL_B |
+
 ## `score.ecu_model.communication.detail.service_port`
 
 ### `PortDefinition`
@@ -219,23 +264,6 @@ A message port consumed by an application or activity.
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
 | `max_required_messages` | `int` | `1` | Max input queue size, window size regarding all messages published by the producer |
-
-## `score.ecu_model.communication.protocol`
-
-### `ProtocolKind`
-
-Inherits from `str`, `Enum`.
-
-Discriminator values for concrete communication binding models.
-
-**Members**
-
-| Member | Value |
-| --- | --- |
-| `ARA_COM` | `'ARA::COM'` |
-| `ARA_DIAG` | `'ARA::DIAG'` |
-| `MW_COM` | `'MW::COM'` |
-| `MW_DIAG` | `'MW::DIAG'` |
 
 ## `score.ecu_model.communication.service_interface`
 

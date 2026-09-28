@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from typing import Any
-from score.ecu_model.communication.protocol import ProtocolKind
+from score.ecu_model.communication.binding import CommunicationBinding
 
 from pydantic import Field, model_validator
 
@@ -45,8 +45,8 @@ class _BasePort(ModelElement):
         default=AsilLevel.QM,
         description="Data integrity level promised by the sender (ISO 26262)",
     )
-    protocol: ProtocolKind | None = Field(
-        description="Communication protocol used by this port",
+    binding: CommunicationBinding | None = Field(
+        description="Communication binding used by this port",
     )
 
     def model_post_init(self, context: Any, /) -> None:

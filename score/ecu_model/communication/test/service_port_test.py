@@ -16,7 +16,7 @@ import unittest
 from pydantic import ValidationError
 
 from score.ecu_model.common.version import Version
-from score.ecu_model.communication.protocol import ProtocolKind
+from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.communication.service_interface import (
     InterfaceDefinition,
     ServiceInterface,
@@ -33,6 +33,9 @@ class TestServicePort(unittest.TestCase):
     def setUp(self) -> None:
         ModelRegistry.elements.clear()
 
+    def _binding(self, protocol: ProtocolKind = ProtocolKind.ARA_COM) -> CommunicationBinding:
+        return CommunicationBinding(protocol=protocol, network=NetworkKind.SOMEIP)
+
     def _service_interface(self, design_element: InterfaceDefinition | None = None) -> ServiceInterface:
         return ServiceInterface(
             name="VehicleStateDeployment",
@@ -43,16 +46,18 @@ class TestServicePort(unittest.TestCase):
 
     def test_provided_port_preserves_service_metadata(self) -> None:
         service_interface = self._service_interface()
+        binding = self._binding()
         port = ProvidedServicePort(
             name="VehicleStateProvider",
             interface=service_interface,
             instance_id=7,
-            protocol=ProtocolKind.ARA_COM,
+            binding=binding,
             deployment_properties={"port_id": 1},
         )
 
         self.assertIsInstance(port, ProvidedServicePort)
         self.assertIs(port.interface, service_interface)
+        self.assertIs(port.binding, binding)
         self.assertEqual(port.instance_id, 7)
         self.assertEqual(port.deployment_properties, {"port_id": 1})
 
@@ -60,10 +65,14 @@ class TestServicePort(unittest.TestCase):
         port = RequiredServicePort(
             name="VehicleStateConsumer",
             interface=self._service_interface(),
-            protocol=ProtocolKind.MW_COM,
+            binding=self._binding(ProtocolKind.MW_COM),
         )
 
         self.assertIsInstance(port, RequiredServicePort)
+
+    def test_service_port_requires_binding(self) -> None:
+        with self.assertRaises(ValidationError):
+            RequiredServicePort(name="VehicleStateConsumer", interface=self._service_interface())
 
     def test_port_specification_instantiation_and_registration(self) -> None:
         design = InterfaceDefinition(name="VehicleState", version=Version())
@@ -85,7 +94,7 @@ class TestServicePort(unittest.TestCase):
             name="VehicleStateConsumer",
             interface=service_interface,
             design_element=design_element,
-            protocol=ProtocolKind.ARA_DIAG,
+            binding=self._binding(ProtocolKind.ARA_DIAG),
         )
 
         self.assertIs(port.design_element, design_element)
@@ -101,7 +110,7 @@ class TestServicePort(unittest.TestCase):
                 name="VehicleStateConsumer",
                 interface=service_interface,
                 design_element=design_element,
-                protocol=ProtocolKind.ARA_DIAG,
+                binding=self._binding(ProtocolKind.ARA_DIAG),
             )
 
     def test_instance_id_must_be_positive_integer(self) -> None:
@@ -110,7 +119,7 @@ class TestServicePort(unittest.TestCase):
                 name="VehicleStateProvider",
                 interface=self._service_interface(),
                 instance_id=0,
-                protocol=ProtocolKind.MW_DIAG,
+                binding=self._binding(ProtocolKind.MW_DIAG),
             )
 
     def test_deployment_property_names_must_not_be_empty(self) -> None:
@@ -118,7 +127,7 @@ class TestServicePort(unittest.TestCase):
             ProvidedServicePort(
                 name="VehicleStateProvider",
                 interface=self._service_interface(),
-                protocol=ProtocolKind.ARA_COM,
+                binding=self._binding(),
                 deployment_properties={" ": True},
             )
 

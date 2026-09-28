@@ -14,11 +14,23 @@
 load("@rules_python//python:defs.bzl", "py_test")
 
 py_test(
+    name = "binding_test",
+    size = "small",
+    srcs = ["binding_test.py"],
+    deps = [
+        "//score/ecu_model",
+        "//score/ecu_model/communication",
+        "@pypi//pydantic",
+    ],
+)
+
+py_test(
     name = "detail_test",
     size = "small",
     srcs = ["detail_test.py"],
     deps = [
         "//score/ecu_model",
+        "//score/ecu_model:common",
         "//score/ecu_model/communication",
         "@pypi//pydantic",
     ],

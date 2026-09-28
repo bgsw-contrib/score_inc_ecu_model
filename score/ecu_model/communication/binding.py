@@ -13,6 +13,9 @@
 
 from enum import Enum
 
+from pydantic import ConfigDict, Field
+from score.ecu_model.model import ModelElement
+
 
 class ProtocolKind(str, Enum):
     """Discriminator values for concrete communication binding models."""
@@ -21,3 +24,20 @@ class ProtocolKind(str, Enum):
     ARA_DIAG = "ARA::DIAG"
     MW_COM = "MW::COM"
     MW_DIAG = "MW::DIAG"
+
+
+class NetworkKind(str, Enum):
+    """Discriminator values for binding specific bus protocols"""
+
+    SOMEIP = "SOMEIP"
+    IPC = "IPC"
+
+
+class CommunicationBinding(ModelElement):
+    """Generic core communication binding for all supported platform protocols."""
+
+    model_config = ConfigDict(validate_assignment=True)
+    protocol: ProtocolKind = Field(..., description="Transport protocol identifier")
+    network: NetworkKind = Field(
+        description="Optional underlying network transport, e.g. SOMEIP, IPC, or IPC_ASIL_B",
+    )
