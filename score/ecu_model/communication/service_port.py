@@ -11,20 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_library")
+from __future__ import annotations
 
-py_library(
-    name = "service_interface",
-    srcs = [
-        "__init__.py",
-        "detail.py",
-        "interface.py",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//score/ecu_model",
-        "//score/ecu_model:common",
-        "//score/ecu_model/data_types",
-        "@pypi//pydantic",
-    ],
-)
+from score.ecu_model.communication.detail.service_port import _ServicePort
+
+
+class ProvidedServicePort(_ServicePort):
+    """A service port offered by an application or activity."""
+
+
+class RequiredServicePort(_ServicePort):
+    """A service port consumed by an application or activity."""
