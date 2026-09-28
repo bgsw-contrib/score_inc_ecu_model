@@ -24,11 +24,9 @@ Inheritance (`<|--`) and references between the documented types; members are om
 
 ```mermaid
 classDiagram
-    class AsilLevel
-    class ProvidedMessagePort
-    class ProvidedServicePort
-    class RequiredMessagePort
-    class RequiredServicePort
+    ModelElement <|-- Activity
+    ModelElement <|-- Application
+    ModelElement <|-- Ecu
     ModelElement <|-- CommunicationBinding
     ModelElement <|-- PortDefinition
     ModelElement <|-- MessageChannel
@@ -46,6 +44,22 @@ classDiagram
     DataTypeBase <|-- TypedefDataType
     CompositeDataType <|-- UnionDataType
     ModelRegistry <|-- ModelElement
+    Activity --> Identifier : name
+    Activity --> QualifiedName : namespace
+    Activity --> AsilLevel : asil
+    Activity --> Version : version
+    Activity --> RequiredMessagePort : inputs
+    Activity --> RequiredServicePort : inputs
+    Activity --> ProvidedMessagePort : outputs
+    Activity --> ProvidedServicePort : outputs
+    Application --> Identifier : name
+    Application --> QualifiedName : namespace
+    Application --> Activity : activities
+    Application --> ProvidedServicePort : provided_service_ports
+    Application --> RequiredServicePort : required_service_ports
+    Ecu --> Identifier : name
+    Ecu --> QualifiedName : namespace
+    Ecu --> Application : applications
     CommunicationBinding --> ProtocolKind : protocol
     CommunicationBinding --> NetworkKind : network
     PortDefinition --> InterfaceDefinition : interface_design
@@ -104,6 +118,93 @@ classDiagram
     TypedefDataType --> PrimitiveDataType : data_type
     TypedefDataType --> QualifiedName : data_type
 ```
+
+## `score.ecu_model.architecture.activity`
+
+### `Activity`
+
+Inherits from [`ModelElement`](#modelelement).
+
+Executable unit in regards to scheduling with typed input and output ports.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ | Identifier of the activity, unique within the owning application |
+| `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Namespace in which the activity is declared |
+| `asil` | [`AsilLevel`](#asillevel) | `AsilLevel.QM` | ISO 26262 ASIL level |
+| `version` | [`Version`](#version) | `Version()` | Semantic version of the activity |
+| `inputs` | list[[`RequiredMessagePort`](#requiredmessageport) \| [`RequiredServicePort`](#requiredserviceport)] | `list()` | All input ports consumed by this activity |
+| `outputs` | list[[`ProvidedMessagePort`](#providedmessageport) \| [`ProvidedServicePort`](#providedserviceport)] | `list()` | All output ports published by this activity |
+
+#### `fully_qualified_name`
+
+_property_
+
+Return the dot-separated activity name.
+
+## `score.ecu_model.architecture.application`
+
+### `Application`
+
+Inherits from [`ModelElement`](#modelelement).
+
+A process grouping one or more activities.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ | Identifier of the application, unique within the owning ECU |
+| `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Namespace in which the application is declared |
+| `activities` | list[[`Activity`](#activity)] | _required_ | Activities contained in this application |
+| `provided_service_ports` | list[[`ProvidedServicePort`](#providedserviceport)] | `list()` | Service ports provided by this application |
+| `required_service_ports` | list[[`RequiredServicePort`](#requiredserviceport)] | `list()` | Service ports required by this application |
+| `deployment_properties` | `dict[str, object]` | `dict()` | Deployment metadata attached to this application |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_validate_property_names` | field, after | `deployment_properties` | Validates `deployment_properties`. |
+| `_validate_unique_activity_names` | model, after | _the whole model_ | Validates the model as a whole. |
+
+#### `fully_qualified_name`
+
+_property_
+
+Return the dot-separated application name.
+
+## `score.ecu_model.architecture.ecu`
+
+### `Ecu`
+
+Inherits from [`ModelElement`](#modelelement).
+
+A deployment target grouping the applications that run on it.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ | Identifier of the ECU, unique within the owning system |
+| `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Namespace in which the ECU is declared |
+| `applications` | list[[`Application`](#application)] | _required_ | Applications deployed on this ECU |
+| `deployment_properties` | `dict[str, object]` | `dict()` | Deployment metadata attached to this ECU |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_validate_property_names` | field, after | `deployment_properties` | Validates `deployment_properties`. |
+| `_validate_unique_application_names` | model, after | _the whole model_ | Validates the model as a whole. |
+
+#### `fully_qualified_name`
+
+_property_
+
+Return the dot-separated ECU name.
 
 ## `score.ecu_model.common.asil_level`
 
