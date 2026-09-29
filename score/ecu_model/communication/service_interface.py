@@ -13,7 +13,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from score.ecu_model.common.version import Version
 from score.ecu_model.data_types.common import DataTypeOrReference, DataTypeReference
@@ -23,14 +23,14 @@ from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.model import ModelElement
 
 
-class Broadcast(BaseModel):
+class Broadcast(ModelElement):
     """Named service broadcast / event carrying zero or more output data types."""
 
     name: Identifier
     outputs: list[DataTypeField] = Field(default_factory=list)
 
 
-class Attribute(BaseModel):
+class Attribute(ModelElement):
     """Named service attribute field with access properties."""
 
     name: Identifier
@@ -40,7 +40,7 @@ class Attribute(BaseModel):
     subscribable: bool = Field(default=True, description="Indicates if the attribute can be subscribed to")
 
 
-class Method(BaseModel):
+class Method(ModelElement):
     """Named service method with input, output, and error definitions."""
 
     name: Identifier

@@ -11,37 +11,42 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_python//python:defs.bzl", "py_test")
 
-py_binary(
-    name = "generate_model_docs",
-    srcs = ["generate_model_docs.py"],
-    visibility = ["//visibility:public"],
+py_test(
+    name = "activity_test",
+    size = "small",
+    srcs = ["activity_test.py"],
     deps = [
         "//score/ecu_model",
         "//score/ecu_model:common",
         "//score/ecu_model/architecture",
         "//score/ecu_model/communication",
-        "//score/ecu_model/data_types",
+        "@pypi//pydantic",
     ],
 )
 
-# Guards against a stale //docs/model_reference.md being checked in.
 py_test(
-    name = "model_docs_test",
-    srcs = ["generate_model_docs.py"],
-    args = [
-        "--check",
-        "--output",
-        "$(location //docs:model_reference.md)",
-    ],
-    data = ["//docs:model_reference.md"],
-    main = "generate_model_docs.py",
+    name = "application_test",
+    size = "small",
+    srcs = ["application_test.py"],
     deps = [
         "//score/ecu_model",
         "//score/ecu_model:common",
         "//score/ecu_model/architecture",
         "//score/ecu_model/communication",
+        "@pypi//pydantic",
+    ],
+)
+
+py_test(
+    name = "ecu_test",
+    size = "small",
+    srcs = ["ecu_test.py"],
+    deps = [
+        "//score/ecu_model",
+        "//score/ecu_model/architecture",
         "//score/ecu_model/data_types",
+        "@pypi//pydantic",
     ],
 )
