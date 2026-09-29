@@ -16,11 +16,11 @@ import unittest
 from pydantic import ValidationError
 
 from score.ecu_model.common.version import Version
+from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.communication.detail.base_port import _BasePort
 from score.ecu_model.communication.detail.message_port import _MessagePort
 from score.ecu_model.communication.detail.service_port import _ServicePort
 from score.ecu_model.communication.message_channel import MessageChannel
-from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.communication.service_interface import InterfaceDefinition, ServiceInterface
 from score.ecu_model.model import ModelRegistry
 

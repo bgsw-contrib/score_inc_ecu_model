@@ -10,11 +10,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
-
 load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@score_tooling//cr_checker:cr_checker.bzl", "copyright_checker")
-load("//tools/lint:linters.bzl", "use_ruff_targets")
 
 compile_pip_requirements(
     name = "requirements",
@@ -27,17 +25,26 @@ compile_pip_requirements(
 # needs to be visible outside the root package.
 exports_files([".ruff.toml"])
 
+alias(
+    name = "install_hooks",
+    actual = "//tools/hooks:install",
+)
+
 copyright_checker(
     name = "copyright",
     # third_party is excluded: templates.ini holds one header per file type,
     # which the checker would report as duplicated headers.
     srcs = [
+        ".",
+        ".githooks",
         ".github",
-        "BUILD.bazel",
-        "MODULE.bazel",
+        ".vscode",
         "docs",
         "score",
+        "test",
+        "third_party",
         "tools",
+        ":(exclude)third_party/cr_checker/templates.ini",
     ],
     config = "//third_party/cr_checker:config",
     template = "//third_party/cr_checker:templates",
@@ -60,5 +67,3 @@ format_test(
     target_compatible_with = ["@platforms//os:linux"],
     workspace = "//:LICENSE",
 )
-
-use_ruff_targets()

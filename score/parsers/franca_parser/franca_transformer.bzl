@@ -11,6 +11,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+"""Rules for transforming Franca FIDL files."""
+
 def _franca_transformer_impl(ctx):
     args = ctx.actions.args()
     for source in ctx.files.srcs:
@@ -32,8 +34,8 @@ def _franca_transformer_impl(ctx):
 _franca_transformer = rule(
     implementation = _franca_transformer_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files = [".fidl", ".fdepl"]),
         "deps": attr.label_list(allow_files = [".fidl", ".fdepl"]),
+        "srcs": attr.label_list(allow_files = [".fidl", ".fdepl"]),
         "transformed_franca_files": attr.output(mandatory = True),
         "_runner": attr.label(
             default = Label("//score/parsers/franca_parser:franca_transformer_runner"),

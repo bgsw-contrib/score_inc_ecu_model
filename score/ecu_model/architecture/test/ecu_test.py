@@ -15,11 +15,11 @@ import unittest
 
 from pydantic import ValidationError
 
-from score.ecu_model.data_types.identifier import QualifiedName
-from score.ecu_model.model import ModelRegistry
 from score.ecu_model.architecture.activity import Activity
 from score.ecu_model.architecture.application import Application
 from score.ecu_model.architecture.ecu import Ecu
+from score.ecu_model.data_types.identifier import QualifiedName
+from score.ecu_model.model import ModelRegistry
 
 
 class TestEcu(unittest.TestCase):

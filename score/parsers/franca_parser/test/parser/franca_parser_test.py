@@ -13,11 +13,10 @@
 
 """Behavior tests for FIDL parsing and import discovery."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from score.parsers.franca_parser.parser import FrancaParser
-
 
 TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
 

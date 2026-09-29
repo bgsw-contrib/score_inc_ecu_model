@@ -1,0 +1,58 @@
+// *******************************************************************************
+// Copyright (c) 2026 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
+{
+    "python.analysis.diagnosticMode": "workspace",
+    // Ruff ships its own binary, so no interpreter or venv is needed here.
+    // Bazel/CI get ruff from the hermetic rules_lint toolchain instead.
+    "ruff.importStrategy": "useBundled",
+    "ruff.nativeServer": "on",
+    "bazel.buildifierExecutable": "${workspaceFolder}/tools/buildifier",
+    "bazel.buildifierFixOnFormat": true,
+    // No ruff.configuration on purpose: like the Bazel lint aspect, ruff
+    // discovers //:.ruff.toml itself, so editor and CI stay in sync.
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit"
+        }
+    },
+    "[starlark]": {
+        "editor.formatOnSave": true
+    },
+    // Third-party packages live in the Bazel output base, not in a venv, so
+    // Pylance needs the pip repositories of the //:pypi hub on its search path.
+    // The "external" symlink is created once with:
+    //   ln -sfn "$(bazel info output_base)/external" external
+    // Keep this list in sync with requirements_lock.txt (repository names use
+    // underscores, e.g. pydantic-core -> pydantic_core).
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_annotated_types/site-packages",
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_lark/site-packages",
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_lcov_cobertura/site-packages",
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_pydantic/site-packages",
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_pydantic_core/site-packages",
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_typing_extensions/site-packages",
+        "${workspaceFolder}/external/rules_python++pip+pypi_312_typing_inspection/site-packages",
+        "${workspaceFolder}/external/protobuf+/python"
+    ],
+    // Bazel symlinks contain copies of the sources; indexing them yields
+    // duplicate symbols and stale results.
+    "python.analysis.exclude": [
+        "**/bazel-*/**"
+    ],
+    "files.watcherExclude": {
+        "**/bazel-*/**": true,
+        "**/external/**": true
+    }
+}

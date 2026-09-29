@@ -13,11 +13,11 @@
 
 """Behavior tests for collection-aware FIDL datatype resolution."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
-from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.data_types.common import DataTypeSource
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.data_types.struct import StructDataType
 from score.parsers.franca_parser.model.fidl.fidl_file import (
     FIDLFileModel,

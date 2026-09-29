@@ -13,8 +13,8 @@
 
 """Integration tests for FDEPL deployment specification transformation."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from score.parsers.franca_parser.model.fdepl.specification import (
     DeploymentPropertyType,
@@ -24,7 +24,6 @@ from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import (
     FrancaFileGraphTransformer,
 )
-
 
 SPECIFICATION_DIRECTORY = Path(__file__).parents[3] / "spec_files"
 

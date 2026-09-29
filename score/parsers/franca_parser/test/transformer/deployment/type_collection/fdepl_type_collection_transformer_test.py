@@ -13,8 +13,8 @@
 
 """Integration tests for FDEPL type-collection deployment transformation."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from score.ecu_model.data_types.array import ArrayDataType
 from score.ecu_model.data_types.enum import EnumDataType, EnumValue
@@ -24,8 +24,8 @@ from score.ecu_model.data_types.typedef import TypedefDataType
 from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.franca_parser.model.fdepl.type_collection_deployment import (
     ArrayDeployment,
-    EnumValueDeployment,
     EnumerationDeployment,
+    EnumValueDeployment,
     MapDeployment,
     StructDeployment,
     TypedefDeployment,
@@ -35,7 +35,6 @@ from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import (
     FrancaFileGraphTransformer,
 )
-
 
 TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
 

@@ -16,9 +16,9 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import pickle
-from typing import Sequence
+from collections.abc import Sequence
+from pathlib import Path
 
 from score.parsers.protobuf_parser.api import (
     ProtobufToDataTypeParser,

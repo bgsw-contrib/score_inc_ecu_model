@@ -17,15 +17,15 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
+from score.ecu_model.data_types.array import ArrayDataType
+from score.ecu_model.data_types.common import DataTypeBase
+from score.ecu_model.data_types.map import MapDataType
 from score.parsers.protobuf_parser.common import (
     ProtoResolverIssue,
     ReferenceTargetKind,
     SourceSpan,
     UnresolvedReference,
 )
-from score.ecu_model.data_types.array import ArrayDataType
-from score.ecu_model.data_types.common import DataTypeBase
-from score.ecu_model.data_types.map import MapDataType
 
 
 class ProtoResolverError(ValueError):

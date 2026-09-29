@@ -48,7 +48,7 @@ class Version(BaseModel):
         raise ValueError("Version numbers must be integers in decimal format")
 
     @model_validator(mode="after")
-    def _validate_at_least_one_non_zero(self) -> "Version":
+    def _validate_at_least_one_non_zero(self) -> Version:
         if self.major == 0 and self.minor == 0 and self.patch == 0:
             raise ValueError("At least one of major, minor or patch must be greater than zero")
         return self

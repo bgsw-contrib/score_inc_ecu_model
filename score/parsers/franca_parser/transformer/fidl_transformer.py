@@ -32,22 +32,21 @@ from score.ecu_model.data_types.struct import StructDataType
 from score.ecu_model.data_types.typedef import TypedefDataType
 from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.franca_parser.model.fidl.fidl_file import FIDLFileModel
+from score.parsers.franca_parser.model.fidl.type_collection import (
+    TypeCollection,
+)
 from score.parsers.franca_parser.model.franca_file import (
     FrancaFileModel,
     FrancaTransformationContext,
-)
-from score.parsers.franca_parser.model.fidl.type_collection import (
-    TypeCollection,
 )
 from score.parsers.franca_parser.model.parsed_file import ParsedFile
 from score.parsers.franca_parser.transformer.base_transformer import (
     FrancaFileTransformer,
 )
-from score.parsers.franca_parser.transformer.resolver.fidl_datatype_resolver import FIDLDataTypeResolver
 from score.parsers.franca_parser.transformer.resolver.fidl_datatype_resolver import (
+    FIDLDataTypeResolver,
     PendingDatatypeReference,
 )
-
 
 PRIMITIVE_TYPES = {
     "boolean": PrimitiveDataType.BOOL,

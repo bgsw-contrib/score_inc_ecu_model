@@ -32,7 +32,15 @@ TBD
 TBD
 
 # Contributing
-TBD
+
+Install the git hooks once after cloning:
+
+```shell
+bazel run //:install_hooks
+```
+
+The pre-commit hook runs ruff and buildifier over the repository, so formatting
+and lint problems surface before a push instead of in CI.
 
 ## Support
 

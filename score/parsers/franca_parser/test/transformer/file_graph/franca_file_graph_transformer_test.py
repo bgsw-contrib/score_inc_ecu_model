@@ -13,14 +13,13 @@
 
 """Behavior tests for Franca file graph transformation."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import (
     FrancaFileGraphTransformer,
 )
-
 
 TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
 

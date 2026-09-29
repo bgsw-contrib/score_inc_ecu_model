@@ -12,9 +12,8 @@
 # *******************************************************************************
 from __future__ import annotations
 
-from collections.abc import Iterator
-
 import re
+from collections.abc import Iterator
 
 from pydantic import ConfigDict, Field, RootModel, field_validator
 

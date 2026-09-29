@@ -12,8 +12,9 @@
 # *******************************************************************************
 from __future__ import annotations
 
-from pydantic import Field, ValidationInfo, field_validator
 from typing import Literal
+
+from pydantic import Field, ValidationInfo, field_validator
 
 from score.ecu_model.data_types.common import (
     DataTypeBase,

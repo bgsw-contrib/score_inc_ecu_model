@@ -15,9 +15,7 @@
 
 from __future__ import annotations
 
-from google.protobuf import descriptor_pb2
-from google.protobuf import descriptor_pool
-from google.protobuf import message_factory
+from google.protobuf import descriptor_pb2, descriptor_pool, message_factory
 
 
 def field_option_extension_descriptor_set() -> descriptor_pb2.FileDescriptorSet:

@@ -15,12 +15,21 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 from google.protobuf import descriptor_pb2
 from google.protobuf.message import DecodeError, Message
 
+from score.ecu_model.data_types.array import ArrayDataType
+from score.ecu_model.data_types.common import DataTypeBase, DataTypeSource
+from score.ecu_model.data_types.composite import DataTypeField
+from score.ecu_model.data_types.enum import EnumDataType, EnumValue
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
+from score.ecu_model.data_types.map import MapDataType
+from score.ecu_model.data_types.primitives import PrimitiveDataType
+from score.ecu_model.data_types.struct import StructDataType
+from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.protobuf_parser.common import (
     ProtoTransformerError,
     ReferenceTarget,
@@ -38,15 +47,6 @@ from score.parsers.protobuf_parser.option_decoder import (
     OptionValues,
     repeated_dimension_max,
 )
-from score.ecu_model.data_types.array import ArrayDataType
-from score.ecu_model.data_types.common import DataTypeBase, DataTypeSource
-from score.ecu_model.data_types.composite import DataTypeField
-from score.ecu_model.data_types.enum import EnumDataType, EnumValue
-from score.ecu_model.data_types.identifier import Identifier, QualifiedName
-from score.ecu_model.data_types.map import MapDataType
-from score.ecu_model.data_types.primitives import PrimitiveDataType
-from score.ecu_model.data_types.struct import StructDataType
-from score.ecu_model.data_types.union import UnionDataType
 
 _PRIMITIVE_FIELD_TYPES: dict[int, PrimitiveDataType] = {
     descriptor_pb2.FieldDescriptorProto.TYPE_DOUBLE: PrimitiveDataType.DOUBLE,

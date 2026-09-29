@@ -13,8 +13,8 @@
 
 """Integration tests for legacy-compatible Franca datatype deployment properties."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from score.ecu_model.data_types.array import ArrayDataType
 from score.ecu_model.data_types.common import DataTypeSource
@@ -44,7 +44,6 @@ from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import (
     FrancaFileGraphTransformer,
 )
-
 
 TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
 

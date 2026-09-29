@@ -15,9 +15,9 @@
 
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from google.protobuf import descriptor_pb2
 
@@ -30,7 +30,6 @@ from score.parsers.protobuf_parser.common import (
 from score.parsers.protobuf_parser.resolver import (
     ProtoResolverError,
 )
-
 
 _FIELD = descriptor_pb2.FieldDescriptorProto
 

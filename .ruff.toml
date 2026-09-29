@@ -15,8 +15,7 @@
 #
 # This file is shared by both `ruff format` (//:format / //:format.check)
 # and `ruff check` (the `ruff` aspect in tools/lint/linters.bzl, `bazel test
-# --config=ruff`), so a future project-specific override for either only
-# needs to be added here.
+# --config=ruff`), so both editor and CI use the same rule selection.
 #
 # Bazel already pins the exact ruff binary version (via the hermetic
 # `rules_multitool`/`aspect_rules_lint` toolchain), so every other formatter
@@ -35,6 +34,14 @@
 # default.
 
 line-length = 120
+
+[lint]
+# Keep Ruff's default syntax/import checks and enable the rules that catch
+# import ordering, obsolete typing syntax, and avoidable code patterns.
+select = ["E4", "E7", "E9", "F", "I", "UP", "SIM"]
+
+[lint.isort]
+known-first-party = ["score"]
 
 [format]
 line-ending = "lf"

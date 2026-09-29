@@ -13,8 +13,8 @@
 
 """Integration tests for FIDL datatype declaration transformation."""
 
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 from lark.exceptions import VisitError
 
@@ -27,7 +27,6 @@ from score.ecu_model.data_types.struct import StructDataType
 from score.ecu_model.data_types.typedef import TypedefDataType
 from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import FrancaFileGraphTransformer
-
 
 TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data" / "datatype_definitions"
 REFERENCE_DATA_DIRECTORY = Path(__file__).parent / "test_data" / "reference_resolution"

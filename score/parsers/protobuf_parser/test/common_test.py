@@ -69,12 +69,14 @@ class ProtobufCommonUnitTest(unittest.TestCase):
         )
 
         for package in ("example..deployment", "example.bad-segment"):
-            with self.subTest(package=package):
-                with self.assertRaisesRegex(
+            with (
+                self.subTest(package=package),
+                self.assertRaisesRegex(
                     ProtoTransformerError,
                     "schema.proto: malformed protobuf package",
-                ):
-                    package_parts(package, "schema.proto")
+                ),
+            ):
+                package_parts(package, "schema.proto")
 
     def test_com_05_require_name_returns_name_and_reports_missing_descriptor_name(self) -> None:
         self.assertEqual(

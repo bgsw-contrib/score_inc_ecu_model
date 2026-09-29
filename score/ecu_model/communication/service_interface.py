@@ -80,7 +80,7 @@ class InterfaceDefinition(ModelElement):
         return data
 
     @model_validator(mode="after")
-    def _validate_member_keys(self) -> "InterfaceDefinition":
+    def _validate_member_keys(self) -> InterfaceDefinition:
         """Validate that the keys of all member dictionaries match the declared member names."""
         for members, kind in (
             (self.broadcasts, "broadcast"),
@@ -141,7 +141,7 @@ class ServiceInterface(ModelElement):
         return value
 
     @model_validator(mode="after")
-    def _validate_member_deployment_properties(self) -> "ServiceInterface":
+    def _validate_member_deployment_properties(self) -> ServiceInterface:
         """
         Validate that all member-specific deployment data references declared members in the interface design element
         and all declared members are covered by deployment data.

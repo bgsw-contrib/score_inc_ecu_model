@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from score.ecu_model.common.version import Version
 from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
+from score.ecu_model.communication.detail.service_port import PortDefinition
 from score.ecu_model.communication.service_interface import (
     InterfaceDefinition,
     ServiceInterface,
@@ -25,7 +26,6 @@ from score.ecu_model.communication.service_port import (
     ProvidedServicePort,
     RequiredServicePort,
 )
-from score.ecu_model.communication.detail.service_port import PortDefinition
 from score.ecu_model.model import ModelRegistry
 
 

@@ -14,10 +14,9 @@
 from __future__ import annotations
 
 from pydantic import Field
-from score.ecu_model.data_types.identifier import QualifiedName
 
 from score.ecu_model.data_types.common import DataTypeOrReference
-from score.ecu_model.data_types.identifier import Identifier
+from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.model import ModelElement
 
 

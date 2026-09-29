@@ -73,5 +73,5 @@ class DeploymentSpecification:
     """Named FDEPL specification and its property declarations by host."""
 
     name: QualifiedName
-    base_specifications: list[QualifiedName | "DeploymentSpecification"] = field(default_factory=list)
+    base_specifications: list[QualifiedName | DeploymentSpecification] = field(default_factory=list)
     hosts: dict[str, dict[str, ParameterDeclaration]] = field(default_factory=dict)

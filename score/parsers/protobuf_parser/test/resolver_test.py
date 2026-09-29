@@ -17,14 +17,6 @@ from __future__ import annotations
 
 import unittest
 
-from score.parsers.protobuf_parser.common import (
-    ProtoResolverIssue,
-    ReferenceTarget,
-    ReferenceTargetKind,
-    SourceSpan,
-    UnresolvedReference,
-)
-from score.parsers.protobuf_parser.resolver import resolve_references
 from score.ecu_model.data_types.array import ArrayDataType
 from score.ecu_model.data_types.common import DataTypeSource
 from score.ecu_model.data_types.composite import DataTypeField
@@ -33,6 +25,14 @@ from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.data_types.map import MapDataType
 from score.ecu_model.data_types.struct import StructDataType
 from score.ecu_model.data_types.union import UnionDataType
+from score.parsers.protobuf_parser.common import (
+    ProtoResolverIssue,
+    ReferenceTarget,
+    ReferenceTargetKind,
+    SourceSpan,
+    UnresolvedReference,
+)
+from score.parsers.protobuf_parser.resolver import resolve_references
 
 
 def _qualified_name(value: str) -> QualifiedName:

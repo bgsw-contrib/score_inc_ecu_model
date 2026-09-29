@@ -15,9 +15,9 @@ from __future__ import annotations
 
 from pydantic import Field, field_validator, model_validator
 
+from score.ecu_model.architecture.application import Application
 from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.model import ModelElement
-from score.ecu_model.architecture.application import Application
 
 
 class Ecu(ModelElement):
@@ -45,7 +45,7 @@ class Ecu(ModelElement):
         return value
 
     @model_validator(mode="after")
-    def _validate_unique_application_names(self) -> "Ecu":
+    def _validate_unique_application_names(self) -> Ecu:
         application_names = [application.fully_qualified_name for application in self.applications]
         if len(application_names) != len(set(application_names)):
             raise ValueError("application names must be unique within an ECU")

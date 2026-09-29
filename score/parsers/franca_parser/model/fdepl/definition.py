@@ -46,6 +46,6 @@ class DeploymentDefinition:
     specification: QualifiedName | DeploymentSpecification | None = None
     target: object | None = None
     name: QualifiedName | None = None
-    use_definitions: list[QualifiedName | "DeploymentDefinition"] = field(default_factory=list)
+    use_definitions: list[QualifiedName | DeploymentDefinition] = field(default_factory=list)
     parameter_set: list[DeploymentParameter] = field(default_factory=list)
     deployment_elements: list[DeploymentElement] = field(default_factory=list)

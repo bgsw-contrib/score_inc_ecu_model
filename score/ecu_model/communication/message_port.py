@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 from pydantic import Field
+
 from score.ecu_model.communication.detail.message_port import _MessagePort
 
 
