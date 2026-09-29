@@ -23,6 +23,11 @@ from score.parsers.protobuf_parser.option_decoder import (
 
 
 _FIELD = descriptor_pb2.FieldDescriptorProto
+_NAMED_FIELD_TYPES = {
+    _FIELD.TYPE_MESSAGE,
+    _FIELD.TYPE_ENUM,
+    _FIELD.TYPE_GROUP,
+}
 
 
 class DescriptorFixtureBuilder:
@@ -94,7 +99,7 @@ class DescriptorFixtureBuilder:
         number: int,
         field_type: int,
         label: int = _FIELD.LABEL_OPTIONAL,
-        type_name: str = "",
+        type_name: str | None = None,
         oneof_index: int | None = None,
         proto3_optional: bool = False,
     ) -> None:
@@ -103,7 +108,8 @@ class DescriptorFixtureBuilder:
         field_descriptor.number = number
         field_descriptor.label = label
         field_descriptor.type = field_type
-        field_descriptor.type_name = type_name
+        if field_type in _NAMED_FIELD_TYPES and type_name is not None:
+            field_descriptor.type_name = type_name
         if oneof_index is not None:
             field_descriptor.oneof_index = oneof_index
         field_descriptor.proto3_optional = proto3_optional
@@ -179,8 +185,8 @@ def collections_descriptor_set() -> descriptor_pb2.FileDescriptorSet:
     fixture.add_field(counts_entry, name="id", number=1, field_type=_FIELD.TYPE_UINT32)
 
     shape = fixture.add_message("Shape")
-    nickname_oneof_index = fixture.add_oneof(shape, "_nickname")
     identity_oneof_index = fixture.add_oneof(shape, "identity")
+    nickname_oneof_index = fixture.add_oneof(shape, "_nickname")
     map_entry = fixture.add_map_entry(shape, "CountsEntry")
     fixture.add_field(map_entry, name="key", number=1, field_type=_FIELD.TYPE_STRING)
     fixture.add_field(
