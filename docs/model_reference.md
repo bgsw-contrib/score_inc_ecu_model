@@ -52,9 +52,7 @@ classDiagram
     Activity --> AsilLevel : asil
     Activity --> Version : version
     Activity --> RequiredMessagePort : inputs
-    Activity --> RequiredServicePort : inputs
     Activity --> ProvidedMessagePort : outputs
-    Activity --> ProvidedServicePort : outputs
     Application --> Identifier : name
     Application --> QualifiedName : namespace
     Application --> Activity : activities
@@ -138,8 +136,8 @@ Executable unit in regards to scheduling with typed input and output ports.
 | `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Namespace in which the activity is declared |
 | `asil` | [`AsilLevel`](#asillevel) | `AsilLevel.QM` | ISO 26262 ASIL level |
 | `version` | [`Version`](#version) | `Version()` | Semantic version of the activity |
-| `inputs` | list[[`RequiredMessagePort`](#requiredmessageport) \| [`RequiredServicePort`](#requiredserviceport)] | `list()` | All input ports consumed by this activity |
-| `outputs` | list[[`ProvidedMessagePort`](#providedmessageport) \| [`ProvidedServicePort`](#providedserviceport)] | `list()` | All output ports published by this activity |
+| `inputs` | list[[`RequiredMessagePort`](#requiredmessageport)] | `list()` | All input ports consumed by this activity |
+| `outputs` | list[[`ProvidedMessagePort`](#providedmessageport)] | `list()` | All output ports published by this activity |
 
 #### `fully_qualified_name`
 

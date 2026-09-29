@@ -21,7 +21,6 @@ from score.ecu_model.communication.binding import CommunicationBinding, NetworkK
 from score.ecu_model.communication.message_channel import MessageChannel
 from score.ecu_model.communication.message_port import ProvidedMessagePort, RequiredMessagePort
 from score.ecu_model.communication.service_interface import InterfaceDefinition, ServiceInterface
-from score.ecu_model.communication.service_port import ProvidedServicePort, RequiredServicePort
 from score.ecu_model.data_types.identifier import QualifiedName
 from score.ecu_model.model import ModelRegistry
 from score.ecu_model.architecture.activity import Activity
@@ -53,20 +52,6 @@ class TestActivity(unittest.TestCase):
             service_id=42,
         )
 
-    def _required_service_port(self, name: str = "VehicleStateConsumer") -> RequiredServicePort:
-        return RequiredServicePort(
-            name=name,
-            interface=self._service_interface(),
-            binding=CommunicationBinding(protocol=ProtocolKind.ARA_COM, network=NetworkKind.SOMEIP),
-        )
-
-    def _provided_service_port(self, name: str = "VehicleStateProvider") -> ProvidedServicePort:
-        return ProvidedServicePort(
-            name=name,
-            interface=self._service_interface(),
-            binding=CommunicationBinding(protocol=ProtocolKind.ARA_COM, network=NetworkKind.SOMEIP),
-        )
-
     def test_activity_preserves_scheduling_metadata_and_ports(self) -> None:
         input_port = self._input_port()
         output_port = self._output_port()
@@ -86,18 +71,6 @@ class TestActivity(unittest.TestCase):
         self.assertEqual(activity.version, Version(major=2, minor=1, patch=0))
         self.assertIs(activity.inputs[0], input_port)
         self.assertIs(activity.outputs[0], output_port)
-
-    def test_activity_accepts_service_ports_as_inputs_and_outputs(self) -> None:
-        input_port = self._required_service_port()
-        output_port = self._provided_service_port()
-        activity = Activity(
-            name="VehicleStateProxy",
-            inputs=[self._input_port(), input_port],
-            outputs=[self._output_port(), output_port],
-        )
-
-        self.assertIs(activity.inputs[1], input_port)
-        self.assertIs(activity.outputs[1], output_port)
 
     def test_activity_rejects_provided_port_as_input(self) -> None:
         with self.assertRaises(ValidationError):

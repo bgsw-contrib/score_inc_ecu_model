@@ -18,7 +18,6 @@ from pydantic import Field
 from score.ecu_model.common.asil_level import AsilLevel
 from score.ecu_model.common.version import Version
 from score.ecu_model.communication.message_port import ProvidedMessagePort, RequiredMessagePort
-from score.ecu_model.communication.service_port import ProvidedServicePort, RequiredServicePort
 from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.model import ModelElement
 
@@ -33,11 +32,11 @@ class Activity(ModelElement):
     )
     asil: AsilLevel = Field(default=AsilLevel.QM, description="ISO 26262 ASIL level")
     version: Version = Field(default_factory=Version, description="Semantic version of the activity")
-    inputs: list[RequiredMessagePort | RequiredServicePort] = Field(
+    inputs: list[RequiredMessagePort] = Field(
         default_factory=list,
         description="All input ports consumed by this activity",
     )
-    outputs: list[ProvidedMessagePort | ProvidedServicePort] = Field(
+    outputs: list[ProvidedMessagePort] = Field(
         default_factory=list,
         description="All output ports published by this activity",
     )
