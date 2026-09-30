@@ -33,7 +33,7 @@ py_test(
     main = "option_decoder_test.py",
     deps = [
         "//score/parsers/protobuf_parser",
-        "@com_google_protobuf//:protobuf_python",
+        "@pypi//protobuf",
     ],
 )
 
@@ -47,7 +47,7 @@ py_test(
     deps = [
         "//score/ecu_model/data_types",
         "//score/parsers/protobuf_parser",
-        "@com_google_protobuf//:protobuf_python",
+        "@pypi//protobuf",
     ],
 )
 
@@ -67,6 +67,6 @@ py_test(
     main = "api_test.py",
     deps = [
         "//score/parsers/protobuf_parser",
-        "@com_google_protobuf//:protobuf_python",
+        "@pypi//protobuf",
     ],
 )

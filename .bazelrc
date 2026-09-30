@@ -1,5 +1,8 @@
 test --test_output=errors
 
+# Use proto toolchains for prebuilt protoc
+common --incompatible_enable_proto_toolchain_resolution
+
 # Python coverage configuration
 # Run with: bazel coverage //score/...
 coverage --instrument_test_targets

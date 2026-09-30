@@ -26,7 +26,7 @@ py_library(
     ],
     deps = [
         "//score/ecu_model/data_types",
-        "@com_google_protobuf//:protobuf_python",
+        "@pypi//protobuf",
     ],
 )
 

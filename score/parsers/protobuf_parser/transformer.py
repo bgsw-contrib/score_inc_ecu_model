@@ -94,9 +94,21 @@ class DescriptorSetTransformer:
 
     def __init__(self, descriptor_set_paths: Iterable[str | Path]):
         self._descriptor_set = load_descriptor_sets(descriptor_set_paths)
+        self._validate_descriptor_set(self._descriptor_set)
         self._definitions_by_key: dict[str, DataTypeBase] = {}
         self._unresolved_references: list[UnresolvedReference] = []
         self._option_decoder = OptionDecoder(self._descriptor_set)
+
+    @staticmethod
+    def _validate_descriptor_set(descriptor_set: descriptor_pb2.FileDescriptorSet) -> None:
+        for file_descriptor in descriptor_set.file:
+            file_path = file_descriptor.name
+            if file_path == _DESCRIPTOR_PROTO_FILE_PATH:
+                continue
+            syntax = file_descriptor.syntax or "proto2"
+            if syntax != "proto3":
+                raise ProtoTransformerError(f"{file_path}: only proto3 is supported, found '{syntax}'")
+            package_parts(file_descriptor.package, file_path)
 
     def transform(self) -> TransformResult:
         for file_descriptor in self._descriptor_set.file:
@@ -110,9 +122,6 @@ class DescriptorSetTransformer:
         file_path = file_descriptor.name
         if file_path == _DESCRIPTOR_PROTO_FILE_PATH:
             return
-        syntax = file_descriptor.syntax or "proto2"
-        if syntax != "proto3":
-            raise ProtoTransformerError(f"{file_path}: only proto3 is supported, found '{syntax}'")
 
         namespace_parts = package_parts(file_descriptor.package, file_path)
         file_option_values = self._decoded_option_values(file_descriptor.options)
