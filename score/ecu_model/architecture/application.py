@@ -15,10 +15,10 @@ from __future__ import annotations
 
 from pydantic import Field, field_validator, model_validator
 
+from score.ecu_model.architecture.activity import Activity
 from score.ecu_model.communication.service_port import ProvidedServicePort, RequiredServicePort
 from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.model import ModelElement
-from score.ecu_model.architecture.activity import Activity
 
 
 class Application(ModelElement):
@@ -54,7 +54,7 @@ class Application(ModelElement):
         return value
 
     @model_validator(mode="after")
-    def _validate_unique_activity_names(self) -> "Application":
+    def _validate_unique_activity_names(self) -> Application:
         activity_names = [activity.fully_qualified_name for activity in self.activities]
         if len(activity_names) != len(set(activity_names)):
             raise ValueError("activity names must be unique within an application")

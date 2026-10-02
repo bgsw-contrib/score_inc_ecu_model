@@ -19,11 +19,11 @@ from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.parsers.franca_parser.deployment_property_applier import (
     DeploymentPropertyApplier,
 )
-from score.parsers.franca_parser.model.fdepl.fdepl_file import (
-    FDEPLFileModel,
-)
 from score.parsers.franca_parser.model.fdepl.definition import (
     DeploymentParameter,
+)
+from score.parsers.franca_parser.model.fdepl.fdepl_file import (
+    FDEPLFileModel,
 )
 from score.parsers.franca_parser.model.fdepl.specification import (
     DeploymentPropertyType,
@@ -35,8 +35,8 @@ from score.parsers.franca_parser.model.fdepl.specification import (
 )
 from score.parsers.franca_parser.model.fdepl.type_collection_deployment import (
     ArrayDeployment,
-    EnumValueDeployment,
     EnumerationDeployment,
+    EnumValueDeployment,
     FieldDeployment,
     MapDeployment,
     StructDeployment,

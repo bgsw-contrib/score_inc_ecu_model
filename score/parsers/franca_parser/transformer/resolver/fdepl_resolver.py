@@ -25,11 +25,11 @@ from score.parsers.franca_parser.model.fdepl.specification import (
     DeploymentSpecification,
 )
 from score.parsers.franca_parser.model.fdepl.type_collection_deployment import (
-    EnumValueDeployment,
     EnumerationDeployment,
+    EnumValueDeployment,
     StructDeployment,
-    TypeCollectionDeployment,
     TypeCollectionDatatypeDeployment,
+    TypeCollectionDeployment,
     UnionDeployment,
 )
 from score.parsers.franca_parser.model.fidl.fidl_file import (

@@ -50,7 +50,7 @@ class ModelRegistry(BaseModel):
             return
         if not isinstance(self, ModelElement):
             raise TypeError(f"Expected instance of ModelElement, got {type(self).__name__}")
-        if self.id in ModelRegistry.elements.keys():
+        if self.id in ModelRegistry.elements:
             raise ValueError(f"Duplicate instance {str(self)}")
         ModelRegistry.elements[self.id] = self
 

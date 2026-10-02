@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # *******************************************************************************
 # Copyright (c) 2026 Contributors to the Eclipse Foundation
 #
@@ -10,17 +11,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+#
+# Wrapper that runs the Bazel-pinned Buildifier (@buildifier_prebuilt) from the
+# repository root, forwarding all arguments
 
-bazel_dep(name = "score_ecu_model", version = "0.0.0")
-local_path_override(
-    module_name = "score_ecu_model",
-    path = "..",
-)
+set -euo pipefail
 
-bazel_dep(name = "rules_python", version = "1.8.5")
-
-# Only required to build the example, shall be replaceable with nearly every other Python toolchain setup
-python = use_extension("@rules_python//python/extensions:python.bzl", "python", dev_dependency = True)
-python.toolchain(
-    python_version = "3.12",
-)
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$repo_root"
+exec bazel run --ui_event_filters=,+error --noshow_progress -- \
+    @buildifier_prebuilt//:buildifier "$@"

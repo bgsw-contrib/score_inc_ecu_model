@@ -18,12 +18,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
-from google.protobuf import descriptor_pb2
-from google.protobuf import descriptor_pool
-from google.protobuf import json_format
-from google.protobuf import message_factory
-from google.protobuf.descriptor import Descriptor
-from google.protobuf.descriptor import FieldDescriptor
+from google.protobuf import descriptor_pb2, descriptor_pool, json_format, message_factory
+from google.protobuf.descriptor import Descriptor, FieldDescriptor
 from google.protobuf.message import Message
 
 from score.parsers.protobuf_parser.common import (

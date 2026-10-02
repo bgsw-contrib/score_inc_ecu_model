@@ -18,9 +18,9 @@ from pydantic import Field, ValidationInfo, field_validator
 
 from score.ecu_model.data_types.common import (
     DataTypeBase,
-    DataTypeSource,
     DataTypeOrReference,
     DataTypeReference,
+    DataTypeSource,
     Identifier,
 )
 from score.ecu_model.model import ModelElement

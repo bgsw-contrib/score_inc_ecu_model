@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# *******************************************************************************
+# Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+#
+# Runs the copyright checker, ruff linter, ruff formatter and buildifier over
+# the whole repository before a commit is created, mirroring the linter
+# workflow and //:format_test.
+#
+# The binaries come from the hermetic Bazel toolchains, so they are the exact
+# same versions CI uses. Ruff discovers //:.ruff.toml on its own and skips
+# everything listed in .gitignore; buildifier has no such ignore mechanism, so
+# it is fed the tracked Starlark files explicitly. Either way bazel-* and
+# external/ stay out of scope.
+#
+# Fixes are applied but deliberately not staged: the commit is aborted so the
+# changes can be reviewed and staged explicitly.
+#
+# Install with: bazel run //:install_hooks
+
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+
+if ! command -v bazel >/dev/null 2>&1; then
+    echo "pre-commit: bazel not found, skipping ruff." >&2
+    exit 0
+fi
+
+tree_hash() {
+    git -C "$root" diff | git -C "$root" hash-object --stdin
+}
+
+run_tool() {
+    bazel run --ui_event_filters=,+error --noshow_progress -- "$@"
+}
+
+before="$(tree_hash)"
+
+# Lint first, then format: autofixes can leave code the formatter still rewrites.
+set +e
+run_tool @aspect_rules_lint//lint:ruff_bin check --fix --config="$root/.ruff.toml" "$root"
+check_status=$?
+run_tool @aspect_rules_lint//lint:ruff_bin format --config="$root/.ruff.toml" "$root"
+format_status=$?
+run_tool @buildifier_prebuilt//:buildifier -r -mode=fix "$root"
+buildifier_format_status=$?
+run_tool @buildifier_prebuilt//:buildifier -r -mode=check -lint=warn -warnings=all "$root"
+buildifier_lint_status=$?
+bazel run --ui_event_filters=,+error --noshow_progress --config=ci //:copyright.check
+copyright_status=$?
+set -e
+
+if [[ "$(tree_hash)" != "$before" ]]; then
+    echo >&2
+    echo "pre-commit: ruff or buildifier changed some files. Review them, stage them and commit again." >&2
+    exit 1
+fi
+
+if [[ $check_status -ne 0 ]]; then
+    echo >&2
+    echo "pre-commit: ruff found issues it cannot fix automatically (see above)." >&2
+    exit 1
+fi
+
+if [[ $format_status -ne 0 ]]; then
+    echo >&2
+    echo "pre-commit: ruff format failed (see above)." >&2
+    exit 1
+fi
+
+if [[ $buildifier_format_status -ne 0 ]]; then
+    echo >&2
+    echo "pre-commit: buildifier format failed (see above)." >&2
+    exit 1
+fi
+
+if [[ $buildifier_lint_status -ne 0 ]]; then
+    echo >&2
+    echo "pre-commit: buildifier found lint warnings (see above)." >&2
+    exit 1
+fi
+
+if [[ $copyright_status -ne 0 ]]; then
+    echo >&2
+    echo "pre-commit: copyright checker found issues (see above)." >&2
+    exit 1
+fi

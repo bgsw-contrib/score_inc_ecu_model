@@ -16,9 +16,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import pickle
 import unittest
+from pathlib import Path
 
 
 class ProtobufImportVisibilityIntegrationTest(unittest.TestCase):

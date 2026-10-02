@@ -14,6 +14,7 @@
 from enum import Enum
 
 from pydantic import ConfigDict, Field
+
 from score.ecu_model.model import ModelElement
 
 

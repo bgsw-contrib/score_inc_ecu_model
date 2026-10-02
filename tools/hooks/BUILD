@@ -11,16 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-bazel_dep(name = "score_ecu_model", version = "0.0.0")
-local_path_override(
-    module_name = "score_ecu_model",
-    path = "..",
-)
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
-bazel_dep(name = "rules_python", version = "1.8.5")
-
-# Only required to build the example, shall be replaceable with nearly every other Python toolchain setup
-python = use_extension("@rules_python//python/extensions:python.bzl", "python", dev_dependency = True)
-python.toolchain(
-    python_version = "3.12",
+# The hooks are linked from the source tree, not from runfiles, so they are not
+# declared as data here.
+sh_binary(
+    name = "install",
+    srcs = ["install.sh"],
+    visibility = ["//:__pkg__"],
 )

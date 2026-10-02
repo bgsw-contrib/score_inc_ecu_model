@@ -17,7 +17,7 @@ from pydantic import Field, field_validator, model_validator
 
 from score.ecu_model.communication.detail.base_port import _BasePort
 from score.ecu_model.communication.message_channel import ModelElement
-from score.ecu_model.communication.service_interface import ServiceInterface, InterfaceDefinition
+from score.ecu_model.communication.service_interface import InterfaceDefinition, ServiceInterface
 
 
 class PortDefinition(ModelElement):
@@ -49,7 +49,7 @@ class _ServicePort(_BasePort):
     )
 
     @model_validator(mode="after")
-    def _validate_interface_matches_port_spec(self) -> "_BasePort":
+    def _validate_interface_matches_port_spec(self) -> _BasePort:
         if self.design_element is not None and self.interface.design_element != self.design_element.interface_design:
             raise ValueError(
                 "interface design element must match the interface design declared by the port specification"

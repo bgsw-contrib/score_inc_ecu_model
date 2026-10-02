@@ -16,12 +16,12 @@ import unittest
 from pydantic import ValidationError
 
 from score.ecu_model.common.asil_level import AsilLevel
+from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.communication.message_channel import MessageChannel
 from score.ecu_model.communication.message_port import (
     ProvidedMessagePort,
     RequiredMessagePort,
 )
-from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.model import ModelRegistry
 
 

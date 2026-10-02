@@ -17,12 +17,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from score.ecu_model.data_types.identifier import QualifiedName
 from score.parsers.franca_parser.model.fdepl.definition import (
     DeploymentDefinition,
     DeploymentElement,
     DeploymentParameter,
 )
-from score.ecu_model.data_types.identifier import QualifiedName
 from score.parsers.franca_parser.model.fidl.type_collection import (
     TypeCollection,
 )

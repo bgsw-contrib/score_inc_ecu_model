@@ -13,16 +13,16 @@
 
 """Import-first transformation over a graph of parsed Franca source files."""
 
-from score.parsers.franca_parser.model.franca_file import FrancaFileModel
 from score.parsers.franca_parser.model.franca_file import (
+    FrancaFileModel,
     FrancaTransformationContext,
 )
 from score.parsers.franca_parser.model.parsed_file import ParsedFile
-from score.parsers.franca_parser.transformer.fidl_transformer import (
-    FIDLTransformer,
-)
 from score.parsers.franca_parser.transformer.fdepl_transformer import (
     FDEPLTransformer,
+)
+from score.parsers.franca_parser.transformer.fidl_transformer import (
+    FIDLTransformer,
 )
 from score.parsers.franca_parser.transformer.resolver.fdepl_resolver import (
     FDEPLResolver,

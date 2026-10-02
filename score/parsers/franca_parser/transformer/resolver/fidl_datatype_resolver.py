@@ -13,22 +13,21 @@
 
 """Resolve FIDL datatype references against local and imported type collections."""
 
-from collections.abc import Mapping
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from score.ecu_model.data_types.identifier import QualifiedName
 from score.ecu_model.data_types.common import DataTypeBase
+from score.ecu_model.data_types.identifier import QualifiedName
 from score.parsers.franca_parser.model.fidl.fidl_file import (
     FIDLFileModel,
+)
+from score.parsers.franca_parser.model.fidl.type_collection import (
+    TypeCollection,
 )
 from score.parsers.franca_parser.model.franca_file import (
     FrancaFileModel,
     FrancaTransformationContext,
-)
-from score.parsers.franca_parser.model.fidl.type_collection import (
-    TypeCollection,
 )
 from score.parsers.franca_parser.transformer.resolver.utils_resolver import (
     expand_fqn_candidates,

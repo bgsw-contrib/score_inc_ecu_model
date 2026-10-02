@@ -15,14 +15,14 @@ import unittest
 
 from pydantic import ValidationError
 
+from score.ecu_model.architecture.activity import Activity
+from score.ecu_model.architecture.application import Application
 from score.ecu_model.common.version import Version
 from score.ecu_model.communication.binding import CommunicationBinding, NetworkKind, ProtocolKind
 from score.ecu_model.communication.service_interface import InterfaceDefinition, ServiceInterface
 from score.ecu_model.communication.service_port import ProvidedServicePort
 from score.ecu_model.data_types.identifier import QualifiedName
 from score.ecu_model.model import ModelRegistry
-from score.ecu_model.architecture.activity import Activity
-from score.ecu_model.architecture.application import Application
 
 
 class TestApplication(unittest.TestCase):

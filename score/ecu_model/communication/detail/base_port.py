@@ -14,12 +14,12 @@
 from __future__ import annotations
 
 from typing import Any
-from score.ecu_model.communication.binding import CommunicationBinding
 
 from pydantic import Field, model_validator
 
 from score.ecu_model.common.asil_level import AsilLevel
 from score.ecu_model.common.version import Version
+from score.ecu_model.communication.binding import CommunicationBinding
 from score.ecu_model.data_types.identifier import Identifier, QualifiedName
 from score.ecu_model.model import ModelElement
 

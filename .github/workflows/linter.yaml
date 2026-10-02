@@ -35,6 +35,48 @@ jobs:
       - name: Check copyright headers
         run: bazel run --config=ci //:copyright.check
 
+  buildifier:
+    name: buildifier
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: ./.github/actions/prepare_bazel_environment
+
+      - name: Install SARIF conversion tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes diffutils gawk jq
+
+      - name: Run strict Buildifier lint and create SARIF
+        id: buildifier
+        continue-on-error: true
+        run: tools/lint/buildifier_sarif.sh "$GITHUB_WORKSPACE" buildifier.sarif
+
+      - name: Upload Buildifier SARIF to GitHub Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: buildifier.sarif
+          category: buildifier
+
+      - name: Upload Buildifier report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildifier-findings
+          path: buildifier.sarif
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Fail on Buildifier findings
+        if: steps.buildifier.outcome == 'failure'
+        run: exit 1
+
   lint:
     name: ${{ matrix.id }}
     runs-on: ubuntu-24.04
@@ -100,12 +142,12 @@ jobs:
           # with Code Scanning alerts above a configured severity, using GitHub's own new-vs-baseline diff instead of
           # Aspect's locally computed one. That's blocked for now on otterdog support for the `code_scanning` ruleset
           # rule (see eclipse-csi/otterdog#639). Until that lands, fall back to gating via aspect's own exit code:
-          # `--strategy=hold-the-line` (fails only on error-severity diagnostics) for PR/push/merge_group runs, where
+          # `--strategy=hard` (fails on any error-severity finding in any linted target) for PR/push/merge_group runs, where
           # the result should actually gate the job;
           # `--strategy=soft` (never fails) for other triggers (e.g. nightly, manual dispatch), which only want the
           # report/SARIF, not a pass/fail verdict.
           case "${{ github.event_name }}" in
-            pull_request|push|merge_group) STRATEGY=hold-the-line ;;
+            pull_request|push|merge_group) STRATEGY=hard ;;
             *) STRATEGY=soft ;;
           esac
 
@@ -129,6 +171,27 @@ jobs:
         with:
           bep-json: /tmp/bep.json
           output-file: ${{ matrix.id }}.sarif
+
+      - name: Install jq
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' && matrix.id == 'ruff' && steps.sarif.outcome == 'success' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes jq
+
+      - name: Add rule IDs to Ruff SARIF results
+        # rules_lint's Ruff SARIF keeps the rule code only in the message text.
+        # this is due to a known bug in the original ruff SARIF reports that contain absolute paths.background.
+        # see https://github.com/aspect-build/rules_lint/blob/main/lint/ruff.bzl#L169
+        # fixinf this would require an upstream fix in ruff as well as in rules_int, the first one has been open for
+        # for 2 years, see https://github.com/astral-sh/ruff/issues/14985.
+        # TODO: remove once aspect-build/rules_lint emits native Ruff SARIF.
+        if: ${{ !cancelled() && inputs.fetch-only != 'true' && matrix.id == 'ruff' && steps.sarif.outcome == 'success' }}
+        run: |
+          jq '.runs |= map(
+                .results |= map(.ruleId //= ((.message.text | capture("^(?<id>[A-Z]+[0-9]+)") | .id) // "ruff"))
+                | .tool.driver.rules = ([.results[].ruleId] | unique | map({id: .}))
+              )' ruff.sarif > ruff.sarif.tmp
+          mv ruff.sarif.tmp ruff.sarif
 
       - name: Upload SARIF reports to GitHub Code Scanning
         if: ${{ !cancelled() && inputs.fetch-only != 'true' }}

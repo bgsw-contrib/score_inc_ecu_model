@@ -15,21 +15,26 @@
 
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
-import unittest
 from unittest.mock import patch
 
 from google.protobuf import descriptor_pb2
 
+from score.ecu_model.data_types.array import ArrayDataType
+from score.ecu_model.data_types.enum import EnumDataType
+from score.ecu_model.data_types.map import MapDataType
+from score.ecu_model.data_types.primitives import PrimitiveDataType
+from score.ecu_model.data_types.struct import StructDataType
+from score.ecu_model.data_types.union import UnionDataType
 from score.parsers.protobuf_parser.common import (
     ProtoTransformerError,
     ReferenceTargetKind,
 )
-from score.parsers.protobuf_parser.transformer import (
-    DescriptorSetTransformer,
-    load_descriptor_sets,
+from score.parsers.protobuf_parser.option_decoder import (
+    OptionValues,
 )
 from score.parsers.protobuf_parser.test.test_data.parser_descriptor_test_data import (
     collections_descriptor_set,
@@ -45,15 +50,10 @@ from score.parsers.protobuf_parser.test.test_data.parser_descriptor_test_data im
     runtime_and_application_descriptor_set,
     user_defined_map_descriptor_set,
 )
-from score.parsers.protobuf_parser.option_decoder import (
-    OptionValues,
+from score.parsers.protobuf_parser.transformer import (
+    DescriptorSetTransformer,
+    load_descriptor_sets,
 )
-from score.ecu_model.data_types.array import ArrayDataType
-from score.ecu_model.data_types.enum import EnumDataType
-from score.ecu_model.data_types.map import MapDataType
-from score.ecu_model.data_types.primitives import PrimitiveDataType
-from score.ecu_model.data_types.struct import StructDataType
-from score.ecu_model.data_types.union import UnionDataType
 
 
 def _write_descriptor_artifact(
@@ -523,33 +523,33 @@ class ProtobufTransformerDescriptorUnitTest(unittest.TestCase):
             ("ES_64", "unsupported enum size 'ES_64'"),
             (16, "enum deployment option size must be a string"),
         ):
-            with self.subTest(option_value=option_value):
-                with self.assertRaisesRegex(ProtoTransformerError, expected_error):
-                    _transform_descriptor_artifact(
-                        enum_size_descriptor_set(),
-                        option_values_by_message_type={
-                            "google.protobuf.EnumOptions": OptionValues(
-                                deployment_properties={"deployment.size": option_value},
-                            )
-                        },
-                    )
+            with self.subTest(option_value=option_value), self.assertRaisesRegex(ProtoTransformerError, expected_error):
+                _transform_descriptor_artifact(
+                    enum_size_descriptor_set(),
+                    option_values_by_message_type={
+                        "google.protobuf.EnumOptions": OptionValues(
+                            deployment_properties={"deployment.size": option_value},
+                        )
+                    },
+                )
 
     def test_par_13_rejects_malformed_and_conflicting_descriptor_shapes(self) -> None:
         for case_name, descriptor_set, expected_error in malformed_descriptor_cases():
-            with self.subTest(case_name=case_name):
-                with self.assertRaisesRegex(ProtoTransformerError, expected_error):
-                    _transform_descriptor_artifact(
-                        descriptor_set,
-                        bypass_option_pool_validation=True,
-                    )
+            with self.subTest(case_name=case_name), self.assertRaisesRegex(ProtoTransformerError, expected_error):
+                _transform_descriptor_artifact(
+                    descriptor_set,
+                    bypass_option_pool_validation=True,
+                )
 
         for descriptor_set, expected_error in conflicting_descriptor_cases():
-            with self.subTest(expected_error=expected_error):
-                with self.assertRaisesRegex(ProtoTransformerError, expected_error):
-                    _transform_descriptor_artifact(
-                        descriptor_set,
-                        bypass_option_pool_validation=True,
-                    )
+            with (
+                self.subTest(expected_error=expected_error),
+                self.assertRaisesRegex(ProtoTransformerError, expected_error),
+            ):
+                _transform_descriptor_artifact(
+                    descriptor_set,
+                    bypass_option_pool_validation=True,
+                )
 
 
 if __name__ == "__main__":

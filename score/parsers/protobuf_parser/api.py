@@ -15,17 +15,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
-from score.parsers.protobuf_parser.transformer import (
-    DescriptorSetTransformer,
-)
+from score.ecu_model.data_types.common import DataTypeBase
 from score.parsers.protobuf_parser.resolver import (
     ProtoResolverError,
     resolve_references,
 )
-from score.ecu_model.data_types.common import DataTypeBase
+from score.parsers.protobuf_parser.transformer import (
+    DescriptorSetTransformer,
+)
 
 
 class ProtobufToDataTypeParser:

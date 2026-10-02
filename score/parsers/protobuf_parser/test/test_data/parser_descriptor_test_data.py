@@ -21,7 +21,6 @@ from score.parsers.protobuf_parser.option_decoder import (
     OptionValues,
 )
 
-
 _FIELD = descriptor_pb2.FieldDescriptorProto
 _NAMED_FIELD_TYPES = {
     _FIELD.TYPE_MESSAGE,

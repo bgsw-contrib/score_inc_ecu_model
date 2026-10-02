@@ -16,9 +16,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import pickle
 import unittest
+from pathlib import Path
 
 from score.ecu_model.data_types.array import ArrayDataType
 from score.ecu_model.data_types.enum import EnumDataType
