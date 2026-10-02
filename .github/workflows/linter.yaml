@@ -180,6 +180,10 @@ jobs:
 
       - name: Add rule IDs to Ruff SARIF results
         # rules_lint's Ruff SARIF keeps the rule code only in the message text.
+        # this is due to a known bug in the original ruff SARIF reports that contain absolute paths.background.
+        # see https://github.com/aspect-build/rules_lint/blob/main/lint/ruff.bzl#L169
+        # fixinf this would require an upstream fix in ruff as well as in rules_int, the first one has been open for
+        # for 2 years, see https://github.com/astral-sh/ruff/issues/14985.
         # TODO: remove once aspect-build/rules_lint emits native Ruff SARIF.
         if: ${{ !cancelled() && inputs.fetch-only != 'true' && matrix.id == 'ruff' && steps.sarif.outcome == 'success' }}
         run: |
