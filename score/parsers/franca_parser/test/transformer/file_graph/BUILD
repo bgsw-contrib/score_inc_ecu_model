@@ -26,3 +26,11 @@ franca_transformer(
     srcs = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_root"],
     deps = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_dependency"],
 )
+
+franca_transformer(
+    name = "franca_transformer_preprocessor_fixture",
+    srcs = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_root"],
+    defined = ["FRANCA_FEATURE"],
+    need_preprocessor = True,
+    deps = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_dependency"],
+)
