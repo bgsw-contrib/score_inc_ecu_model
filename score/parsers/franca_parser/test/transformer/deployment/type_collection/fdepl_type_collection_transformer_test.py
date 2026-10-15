@@ -51,9 +51,10 @@ class FDEPLTypeCollectionTransformerTest(unittest.TestCase):
             dependency_files=[specification_file, types_file],
         )
 
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+        transformer = FrancaFileGraphTransformer(parser.parse_files())
+        transformer.transform_files()
 
-        deployment = transformed_files[deployment_file.resolve()].type_collection_deployments[0]
+        deployment = transformer.transformed_files[deployment_file.resolve()].type_collection_deployments[0]
         self.assertIsNone(deployment.target.name)
         self.assertEqual(deployment.target.datatypes[0].name.as_str, "Payload")
 
@@ -66,9 +67,10 @@ class FDEPLTypeCollectionTransformerTest(unittest.TestCase):
             dependency_files=[specification_file, types_file],
         )
 
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+        transformer = FrancaFileGraphTransformer(parser.parse_files())
+        transformer.transform_files()
 
-        deployment = transformed_files[deployment_file.resolve()].type_collection_deployments[0]
+        deployment = transformer.transformed_files[deployment_file.resolve()].type_collection_deployments[0]
         self.assertEqual(deployment.specification.name.as_str, "someip")
         self.assertEqual(deployment.target.name.as_str, "TypeCollectionSkyLandmarks")
         self.assertEqual(deployment.name.as_str, "TypeCollectionSkyLandmarksSomeipStringDeployment_v1_0")

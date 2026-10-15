@@ -11,44 +11,41 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Bazel runner for the initial Franca FIDL transformer target."""
+"""Bazel action entry point for producing a Franca model registry pickle."""
+
+from __future__ import annotations
 
 import argparse
-import pickle
+from collections.abc import Sequence
 from pathlib import Path
 
-from score.parsers.franca_parser.model.fidl.fidl_file import (
-    FIDLFileModel,
-)
+from score.ecu_model.model import ModelRegistry
 from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import (
     FrancaFileGraphTransformer,
 )
 
 
-def main() -> None:
-    """Transform Franca files and write the initial pickle contract."""
+def main(arguments: Sequence[str] | None = None) -> None:
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument("--src", action="append", required=True)
     argument_parser.add_argument("--dep", action="append", default=[])
-    argument_parser.add_argument("--out", required=True)
+    argument_parser.add_argument("--output", required=True)
     argument_parser.add_argument("--defined", action="append", default=[])
-    argument_parser.add_argument("--need_preprocessor", action="store_true", default=False)
-    arguments = argument_parser.parse_args()
+    argument_parser.add_argument("--need-preprocessor", action="store_true")
+    parsed_arguments = argument_parser.parse_args(arguments)
 
     parser = FrancaParser(
-        root_files=[Path(source) for source in arguments.src],
-        dependency_files=[Path(dependency) for dependency in arguments.dep],
-        defined=arguments.defined,
-        need_preprocessor=arguments.need_preprocessor,
+        root_files=[Path(source) for source in parsed_arguments.src],
+        dependency_files=[Path(dependency) for dependency in parsed_arguments.dep],
+        defined=parsed_arguments.defined,
+        need_preprocessor=parsed_arguments.need_preprocessor,
     )
-    transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
-    datatypes = {}
-    for file_model in transformed_files.values():
-        if isinstance(file_model, FIDLFileModel):
-            datatypes.update(file_model._datatype_index)
-    with Path(arguments.out).open("wb") as output_file:
-        pickle.dump({"datatypes": datatypes}, output_file)
+    FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+
+    output_path = Path(parsed_arguments.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_bytes(ModelRegistry.serialize())
 
 
 if __name__ == "__main__":

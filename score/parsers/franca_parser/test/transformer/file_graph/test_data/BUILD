@@ -28,3 +28,9 @@ filegroup(
     srcs = ["imported_types.fidl"],
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "conditional_source",
+    srcs = ["conditional_types.fidl"],
+    visibility = ["//visibility:public"],
+)

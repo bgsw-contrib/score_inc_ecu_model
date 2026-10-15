@@ -51,7 +51,7 @@ class FrancaFileGraphTransformer:
         """Return transformed file models indexed by source path."""
         return self._transformed_files
 
-    def transform_files(self) -> dict[object, FrancaFileModel]:
+    def transform_files(self) -> None:
         """Transform every parsed Franca source file with imports processed first."""
         for file_path in self._parsed_files:
             self._process_file(file_path)
@@ -62,7 +62,6 @@ class FrancaFileGraphTransformer:
         if self._pending_use_definitions:
             resolver = FDEPLResolver(self._transformed_files)
             resolver.resolve_pending_use_definitions(self._pending_use_definitions)
-        return self._transformed_files
 
     def _process_file(self, file_path: object) -> None:
         if file_path in self._transformed_files or file_path in self._visiting_files:

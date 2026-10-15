@@ -12,7 +12,7 @@
 # *******************************************************************************
 
 load("@rules_python//python:defs.bzl", "py_test")
-load("//score/parsers/franca_parser:franca_transformer.bzl", "franca_transformer")
+load("//score/parsers/franca_parser:franca_parser.bzl", "franca_parse")
 
 py_test(
     name = "fidl_datatype_resolver_test",
@@ -29,12 +29,12 @@ py_test(
 py_test(
     name = "fidl_datatype_transformer_test",
     srcs = ["fidl_datatype_transformer_test.py"],
-    data = glob(["test_data/**/*.fidl"]),
+    data = glob(["test_data/**/*.fidl"]) + [":franca_datatype_model_registry"],
     deps = ["//score/parsers/franca_parser"],
 )
 
-franca_transformer(
-    name = "fidl_datatype_pickle",
+franca_parse(
+    name = "franca_datatype_model_registry",
     srcs = ["test_data/reference_resolution/file_only_root.fidl"],
     deps = [
         "test_data/reference_resolution/anonymous_types.fidl",

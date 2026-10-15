@@ -31,7 +31,7 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
         fixture_directory = TEST_DATA_DIRECTORY / "resolve_local"
         root_file = fixture_directory / "local_use.fdepl"
 
-        transformed_files = FrancaFileGraphTransformer(
+        transformer = FrancaFileGraphTransformer(
             FrancaParser(
                 root_files=[root_file],
                 dependency_files=[
@@ -39,9 +39,10 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
                     fixture_directory / "resolve_use_types.fidl",
                 ],
             ).parse_files()
-        ).transform_files()
+        )
+        transformer.transform_files()
 
-        deployments = transformed_files[root_file.resolve()].type_collection_deployments
+        deployments = transformer.transformed_files[root_file.resolve()].type_collection_deployments
         reusable_by_name = {deployment.name.as_str: deployment for deployment in deployments}
 
         for consumer_name in (
@@ -72,7 +73,7 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
             "imported_use_short.fdepl",
         )
 
-        transformed_files = FrancaFileGraphTransformer(
+        transformer = FrancaFileGraphTransformer(
             FrancaParser(
                 root_files=[fixture_directory / filename for filename in root_filenames],
                 dependency_files=[
@@ -82,12 +83,13 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
                     fixture_directory / "resolve_use_types.fidl",
                 ],
             ).parse_files()
-        ).transform_files()
+        )
+        transformer.transform_files()
 
-        simple_deployment = transformed_files[
+        simple_deployment = transformer.transformed_files[
             (fixture_directory / "imported_definition.fdepl").resolve()
         ].type_collection_deployments[0]
-        fqn_deployment = transformed_files[
+        fqn_deployment = transformer.transformed_files[
             (fixture_directory / "imported_definition_fqn.fdepl").resolve()
         ].type_collection_deployments[0]
         expected_deployments = {
@@ -102,7 +104,7 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
         }
 
         for filename, expected_deployment in expected_deployments.items():
-            actual_deployments = transformed_files[(fixture_directory / filename).resolve()]
+            actual_deployments = transformer.transformed_files[(fixture_directory / filename).resolve()]
             for deployment in actual_deployments.type_collection_deployments:
                 self.assertTrue(deployment.use_definitions)
                 self.assertTrue(all(definition is expected_deployment for definition in deployment.use_definitions))
@@ -112,7 +114,7 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
         left_file = fixture_directory / "circular_left.fdepl"
         right_file = fixture_directory / "circular_right.fdepl"
 
-        transformed_files = FrancaFileGraphTransformer(
+        transformer = FrancaFileGraphTransformer(
             FrancaParser(
                 root_files=[left_file],
                 dependency_files=[
@@ -121,10 +123,11 @@ class ResolveUseTypeCollectionTest(unittest.TestCase):
                     fixture_directory / "resolve_use_types.fidl",
                 ],
             ).parse_files()
-        ).transform_files()
+        )
+        transformer.transform_files()
 
-        left_deployment = transformed_files[left_file.resolve()].type_collection_deployments[0]
-        right_deployment = transformed_files[right_file.resolve()].type_collection_deployments[0]
+        left_deployment = transformer.transformed_files[left_file.resolve()].type_collection_deployments[0]
+        right_deployment = transformer.transformed_files[right_file.resolve()].type_collection_deployments[0]
 
         self.assertIs(left_deployment.use_definitions[0], right_deployment)
         self.assertIs(right_deployment.use_definitions[0], left_deployment)

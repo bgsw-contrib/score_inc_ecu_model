@@ -13,18 +13,20 @@
 
 """Integration tests for FIDL datatype declaration transformation."""
 
+import os
 import unittest
 from pathlib import Path
 
 from lark.exceptions import VisitError
 
 from score.ecu_model.data_types.array import ArrayDataType
-from score.ecu_model.data_types.common import DataTypeSource
+from score.ecu_model.data_types.common import DataTypeBase, DataTypeSource
 from score.ecu_model.data_types.enum import EnumDataType
 from score.ecu_model.data_types.map import MapDataType
 from score.ecu_model.data_types.primitives import PrimitiveDataType
 from score.ecu_model.data_types.struct import StructDataType
 from score.ecu_model.data_types.typedef import TypedefDataType
+from score.ecu_model.model import ModelRegistry
 from score.parsers.franca_parser.parser import FrancaParser
 from score.parsers.franca_parser.transformer.file_graph_transformer import FrancaFileGraphTransformer
 
@@ -35,20 +37,39 @@ REFERENCE_DATA_DIRECTORY = Path(__file__).parent / "test_data" / "reference_reso
 class FIDLDatatypeTransformerTest(unittest.TestCase):
     """Verify FIDL datatype declarations transform into Orion models."""
 
+    def transform_to_registry(
+        self,
+        parser: FrancaParser,
+        source_files: tuple[Path, ...],
+    ) -> dict[str, list[DataTypeBase]]:
+        existing_ids = set(ModelRegistry.elements)
+        FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+        new_ids = set(ModelRegistry.elements) - existing_ids
+        registry_bytes = ModelRegistry.serialize()
+        ModelRegistry.deserialize(registry_bytes)
+        datatypes = [
+            element
+            for element in ModelRegistry.elements.values()
+            if element.id in new_ids and isinstance(element, DataTypeBase) and element.name is not None
+        ]
+        return {
+            str(source_file.resolve()): [
+                datatype for datatype in datatypes if datatype.source_uri == str(source_file.resolve())
+            ]
+            for source_file in source_files
+        }
+
     def test_transform_files_given_datatype_declarations_expect_models_and_metadata(self) -> None:
         # Given a FIDL type collection containing each supported datatype declaration.
         source_file = TEST_DATA_DIRECTORY / "datatype_definitions.fidl"
         parser = FrancaParser(root_files=[source_file], dependency_files=[])
 
         # When the parser transforms the source through the FIDL file graph.
-        transformed_file = FrancaFileGraphTransformer(parser.parse_files()).transform_files()[source_file.resolve()]
+        datatypes = self.transform_to_registry(parser, (source_file,))[str(source_file.resolve())]
 
         # Then declarations retain their source ordering, metadata, and datatype semantics.
-        self.assertEqual(len(transformed_file.type_collections), 1)
-        collection = transformed_file.type_collections[0]
-        self.assertEqual(collection.name.as_str, "Definitions")
         self.assertEqual(
-            [datatype.name.as_str for datatype in collection.datatypes],
+            [datatype.name.as_str for datatype in datatypes],
             [
                 "Speed",
                 "Mode",
@@ -61,19 +82,16 @@ class FIDLDatatypeTransformerTest(unittest.TestCase):
                 "Lookup",
             ],
         )
-        self.assertTrue(
-            all(datatype.namespace.as_str == "example.datatypes.Definitions" for datatype in collection.datatypes)
-        )
-        self.assertTrue(all(datatype.source_kind is DataTypeSource.FRANCA for datatype in collection.datatypes))
-        self.assertTrue(all(datatype.source_uri == str(source_file.resolve()) for datatype in collection.datatypes))
+        self.assertTrue(all(datatype.namespace.as_str == "example.datatypes.Definitions" for datatype in datatypes))
+        self.assertTrue(all(datatype.source_kind is DataTypeSource.FRANCA for datatype in datatypes))
 
-        typedef = collection.datatypes[0]
-        enum = collection.datatypes[1]
-        struct = collection.datatypes[2]
-        unbounded_array = collection.datatypes[4]
-        open_lower_bounded_array = collection.datatypes[6]
-        bounded_array = collection.datatypes[7]
-        datatype_map = collection.datatypes[8]
+        typedef = datatypes[0]
+        enum = datatypes[1]
+        struct = datatypes[2]
+        unbounded_array = datatypes[4]
+        open_lower_bounded_array = datatypes[6]
+        bounded_array = datatypes[7]
+        datatype_map = datatypes[8]
 
         self.assertIsInstance(typedef, TypedefDataType)
         self.assertIs(typedef.data_type, PrimitiveDataType.UINT32)
@@ -109,15 +127,15 @@ class FIDLDatatypeTransformerTest(unittest.TestCase):
         )
 
         # When imports are transformed before the root file.
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+        datatypes_by_source = self.transform_to_registry(parser, (root_file, shared_file, anonymous_file))
 
         # Then references bind to their declared imported or local datatype models.
-        root_types = transformed_files[root_file.resolve()].type_collections[0]
-        shared_types = transformed_files[shared_file.resolve()].type_collections[0]
-        anonymous_types = transformed_files[anonymous_file.resolve()].type_collections[0]
-        payload_alias, local_container, local_item = root_types.datatypes
-        shared_payload = shared_types.datatypes[0]
-        anonymous_payload = anonymous_types.datatypes[0]
+        root_datatypes = {datatype.name.as_str: datatype for datatype in datatypes_by_source[str(root_file.resolve())]}
+        payload_alias = root_datatypes["PayloadAlias"]
+        local_container = root_datatypes["LocalContainer"]
+        local_item = root_datatypes["LocalItem"]
+        shared_payload = datatypes_by_source[str(shared_file.resolve())][0]
+        anonymous_payload = datatypes_by_source[str(anonymous_file.resolve())][0]
 
         self.assertIs(payload_alias.data_type, shared_payload)
         self.assertIs(local_container.fields[0].data_type, local_item)
@@ -132,12 +150,13 @@ class FIDLDatatypeTransformerTest(unittest.TestCase):
         parser = FrancaParser(root_files=[source_file], dependency_files=[])
 
         # When the FIDL model root resolves references still pending after import lookup.
-        transformed_file = FrancaFileGraphTransformer(parser.parse_files()).transform_files()[source_file.resolve()]
+        datatypes = self.transform_to_registry(parser, (source_file,))[str(source_file.resolve())]
 
         # Then declarations in the same and sibling collections resolve within the file.
-        primary_types, secondary_types = transformed_file.type_collections
-        primary_payload, local_references = primary_types.datatypes
-        secondary_payload = secondary_types.datatypes[0]
+        datatypes_by_name = {datatype.name.as_str: datatype for datatype in datatypes}
+        primary_payload = datatypes_by_name["PrimaryPayload"]
+        local_references = datatypes_by_name["LocalReferences"]
+        secondary_payload = datatypes_by_name["SecondaryPayload"]
         self.assertIs(local_references.fields[0].data_type, primary_payload)
         self.assertIs(local_references.fields[1].data_type, secondary_payload)
 
@@ -157,13 +176,39 @@ class FIDLDatatypeTransformerTest(unittest.TestCase):
         parser = FrancaParser(root_files=[left_file], dependency_files=[right_file])
 
         # When import traversal completes both declarations before final pending resolution.
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+        datatypes_by_source = self.transform_to_registry(parser, (left_file, right_file))
 
         # Then the reference deferred while the cycle was open is bound to the left declaration.
-        left_payload = transformed_files[left_file.resolve()].type_collections[0].datatypes[0]
-        right_payload = transformed_files[right_file.resolve()].type_collections[0].datatypes[0]
+        left_payload = datatypes_by_source[str(left_file.resolve())][0]
+        right_payload = datatypes_by_source[str(right_file.resolve())][0]
         self.assertIs(left_payload.fields[0].data_type, right_payload)
         self.assertIs(right_payload.fields[0].data_type, left_payload)
+
+    def test_parse_files_given_imported_types_expect_model_registry_with_resolved_references(self) -> None:
+        # Given a Bazel parser action over a root file and its imported datatype files.
+        runfiles_root = Path(os.environ["RUNFILES_DIR"])
+        output_path = next(runfiles_root.rglob("franca_datatype_model_registry.pkl"))
+
+        # When the generated model registry is restored.
+        ModelRegistry.deserialize(output_path.read_bytes())
+        datatypes = {
+            element.name.as_str: element
+            for element in ModelRegistry.elements.values()
+            if isinstance(element, DataTypeBase) and element.name is not None
+        }
+
+        # Then imported and local datatype references point at the registered model instances.
+        shared_payload = datatypes["SharedPayload"]
+        alias = datatypes["PayloadAlias"]
+        local_container = datatypes["LocalContainer"]
+        self.assertIsInstance(alias, TypedefDataType)
+        self.assertIsInstance(local_container, StructDataType)
+        self.assertIs(alias.data_type, shared_payload)
+        self.assertIs(local_container.fields[0].data_type, datatypes["LocalItem"])
+        self.assertIs(local_container.fields[1].data_type, shared_payload)
+        self.assertIs(local_container.fields[2].data_type, shared_payload)
+        self.assertIs(local_container.fields[3].data_type, datatypes["AnonymousPayload"])
+        self.assertIs(local_container.fields[4].data_type, datatypes["AnonymousPayload"])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,15 @@
+package example.franca.preprocessed
+
+#if defined FRANCA_FEATURE
+typeCollection EnabledTypes {
+    struct FeatureValue {
+        UInt32 value
+    }
+}
+#else
+typeCollection DisabledTypes {
+    struct FallbackValue {
+        UInt32 value
+    }
+}
+#endif

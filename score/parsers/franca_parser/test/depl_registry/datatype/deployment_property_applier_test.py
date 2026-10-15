@@ -170,9 +170,10 @@ class DeploymentPropertyApplierTest(unittest.TestCase):
             root_files=[deployment_file],
             dependency_files=[types_file, specification_file, architecture_file],
         )
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+        transformer = FrancaFileGraphTransformer(parser.parse_files())
+        transformer.transform_files()
 
-        type_collection = transformed_files[types_file.resolve()].type_collections[0]
+        type_collection = transformer.transformed_files[types_file.resolve()].type_collections[0]
         datatypes_by_name = {datatype.name.as_str: datatype for datatype in type_collection.datatypes}
         message_text = datatypes_by_name["MessageText"]
         message = datatypes_by_name["Message"]

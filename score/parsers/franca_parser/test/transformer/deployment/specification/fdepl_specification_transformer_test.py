@@ -41,10 +41,11 @@ class FDEPLSpecificationTransformerTest(unittest.TestCase):
             parsed_files[ipc_file.resolve()].imports[0].file_path,
             architecture_file.resolve(),
         )
-        transformed_files = FrancaFileGraphTransformer(parsed_files).transform_files()
+        transformer = FrancaFileGraphTransformer(parsed_files)
+        transformer.transform_files()
 
-        architecture = transformed_files[architecture_file.resolve()].specifications[0]
-        ipc = transformed_files[ipc_file.resolve()].specifications[0]
+        architecture = transformer.transformed_files[architecture_file.resolve()].specifications[0]
+        ipc = transformer.transformed_files[ipc_file.resolve()].specifications[0]
         self.assertEqual(architecture.name.as_str, "architecture")
         self.assertEqual(
             architecture.hosts["devices"]["ScoreProperty065"].type_reference.property_type, DeploymentPropertyType.ENUM

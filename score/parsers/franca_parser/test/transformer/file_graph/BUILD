@@ -12,25 +12,31 @@
 # *******************************************************************************
 
 load("@rules_python//python:defs.bzl", "py_test")
-load("//score/parsers/franca_parser:franca_transformer.bzl", "franca_transformer")
+load("//score/parsers/franca_parser:franca_parser.bzl", "franca_parse")
 
 py_test(
     name = "franca_file_graph_transformer_test",
     srcs = ["franca_file_graph_transformer_test.py"],
-    data = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:fidl_files"],
-    deps = ["//score/parsers/franca_parser"],
+    data = [
+        ":franca_file_graph_model_registry",
+        ":franca_preprocessor_model_registry",
+        "//score/parsers/franca_parser/test/transformer/file_graph/test_data:fidl_files",
+    ],
+    deps = [
+        "//score/ecu_model",
+        "//score/parsers/franca_parser",
+    ],
 )
 
-franca_transformer(
-    name = "franca_transformer_fixture",
+franca_parse(
+    name = "franca_file_graph_model_registry",
     srcs = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_root"],
     deps = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_dependency"],
 )
 
-franca_transformer(
-    name = "franca_transformer_preprocessor_fixture",
-    srcs = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_root"],
+franca_parse(
+    name = "franca_preprocessor_model_registry",
+    srcs = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:conditional_source"],
     defined = ["FRANCA_FEATURE"],
     need_preprocessor = True,
-    deps = ["//score/parsers/franca_parser/test/transformer/file_graph/test_data:direct_import_dependency"],
 )
