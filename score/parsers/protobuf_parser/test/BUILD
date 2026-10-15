@@ -66,6 +66,8 @@ py_test(
     srcs = ["api_test.py"],
     main = "api_test.py",
     deps = [
+        "//score/ecu_model",
+        "//score/ecu_model/data_types",
         "//score/parsers/protobuf_parser",
         "@pypi//protobuf",
     ],

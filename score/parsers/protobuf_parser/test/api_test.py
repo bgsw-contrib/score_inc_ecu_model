@@ -21,6 +21,8 @@ from tempfile import TemporaryDirectory
 
 from google.protobuf import descriptor_pb2
 
+from score.ecu_model.data_types.common import DataTypeBase
+from score.ecu_model.model import ModelRegistry
 from score.parsers.protobuf_parser.api import (
     ProtobufToDataTypeParser,
 )
@@ -81,6 +83,17 @@ def _write_descriptor_artifact(
 class ProtobufApiIntegrationTest(unittest.TestCase):
     """Exercise the public API without compiler or macro dependencies."""
 
+    def parse_to_registry(self, descriptor_set_paths: list[Path]) -> dict[str, DataTypeBase]:
+        existing_ids = set(ModelRegistry.elements)
+        ProtobufToDataTypeParser.parse(descriptor_set_paths)
+        registry_bytes = ModelRegistry.serialize()
+        ModelRegistry.deserialize(registry_bytes)
+        return {
+            element.fully_qualified_name: element
+            for element in ModelRegistry.elements.values()
+            if element.id not in existing_ids and isinstance(element, DataTypeBase) and element.name is not None
+        }
+
     def test_api_01_parses_one_artifact_and_resolves_references(self) -> None:
         file_descriptor = _proto3_file("single.proto", "test.api")
         _add_message(file_descriptor, "Child")
@@ -98,7 +111,7 @@ class ProtobufApiIntegrationTest(unittest.TestCase):
                 "single.pb",
                 file_descriptor,
             )
-            definitions_by_key = ProtobufToDataTypeParser.parse([artifact_path])
+            definitions_by_key = self.parse_to_registry([artifact_path])
 
         child = definitions_by_key["test.api.Child"]
         parent_definition = definitions_by_key["test.api.Parent"]
@@ -129,37 +142,20 @@ class ProtobufApiIntegrationTest(unittest.TestCase):
                 "parent.pb",
                 parent_file,
             )
-            definitions_by_key = ProtobufToDataTypeParser.parse([child_artifact, parent_artifact])
+            definitions_by_key = self.parse_to_registry([child_artifact, parent_artifact])
 
         self.assertIs(
             definitions_by_key["test.api.Parent"].fields[0].data_type,
             definitions_by_key["test.api.Child"],
         )
 
-    def test_api_03_returns_an_ordinary_mutable_dictionary(self) -> None:
-        file_descriptor = _proto3_file("mutable.proto", "test.api")
-        _add_message(file_descriptor, "Child")
-
-        with TemporaryDirectory() as temporary_directory:
-            artifact_path = _write_descriptor_artifact(
-                Path(temporary_directory),
-                "mutable.pb",
-                file_descriptor,
-            )
-            definitions_by_key = ProtobufToDataTypeParser.parse([artifact_path])
-
-        child = definitions_by_key["test.api.Child"]
-        self.assertIsInstance(definitions_by_key, dict)
-        definitions_by_key["test.api.Injected"] = child
-        self.assertIs(definitions_by_key["test.api.Injected"], child)
-
-    def test_api_04_propagates_descriptor_artifact_read_failures(self) -> None:
+    def test_api_03_propagates_descriptor_artifact_read_failures(self) -> None:
         with TemporaryDirectory() as temporary_directory:
             missing_artifact = Path(temporary_directory) / "missing.pb"
             with self.assertRaisesRegex(RuntimeError, "Failed to read descriptor artifact"):
                 ProtobufToDataTypeParser.parse([missing_artifact])
 
-    def test_api_05_propagates_descriptor_transformer_failures(self) -> None:
+    def test_api_04_propagates_descriptor_transformer_failures(self) -> None:
         legacy_file = descriptor_pb2.FileDescriptorProto(
             name="legacy.proto",
             package="test.api",
@@ -175,7 +171,7 @@ class ProtobufApiIntegrationTest(unittest.TestCase):
             with self.assertRaisesRegex(ProtoTransformerError, "only proto3 is supported"):
                 ProtobufToDataTypeParser.parse([artifact_path])
 
-    def test_api_06_promotes_unresolved_references_to_resolver_errors(self) -> None:
+    def test_api_05_promotes_unresolved_references_to_resolver_errors(self) -> None:
         file_descriptor = _proto3_file("unresolved.proto", "test.api")
         file_descriptor.dependency.append("google/protobuf/descriptor.proto")
         parent = _add_message(file_descriptor, "Parent")

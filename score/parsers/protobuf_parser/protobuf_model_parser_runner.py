@@ -11,30 +11,29 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-"""Bazel executable that forwards descriptor artifacts to ProtobufToDataTypeParser."""
+"""Bazel action entry point for producing a Protobuf model registry pickle."""
 
 from __future__ import annotations
 
 import argparse
-import pickle
 from collections.abc import Sequence
 from pathlib import Path
 
-from score.parsers.protobuf_parser.api import (
-    ProtobufToDataTypeParser,
-)
+from score.ecu_model.model import ModelRegistry
+from score.parsers.protobuf_parser.api import ProtobufToDataTypeParser
 
 
 def main(arguments: Sequence[str] | None = None) -> None:
-    """Parse descriptor artifacts and write the resulting registry as a pickle."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--descriptor-set", action="append", required=True)
-    parser.add_argument("--output", required=True)
-    parsed_arguments = parser.parse_args(arguments)
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument("--descriptor-set", action="append", required=True)
+    argument_parser.add_argument("--output", required=True)
+    parsed_arguments = argument_parser.parse_args(arguments)
 
-    registry = ProtobufToDataTypeParser.parse(parsed_arguments.descriptor_set)
-    with Path(parsed_arguments.output).open("wb") as output_file:
-        pickle.dump({"datatypes": registry}, output_file, protocol=pickle.HIGHEST_PROTOCOL)
+    ProtobufToDataTypeParser.parse(parsed_arguments.descriptor_set)
+
+    output_path = Path(parsed_arguments.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_bytes(ModelRegistry.serialize())
 
 
 if __name__ == "__main__":
