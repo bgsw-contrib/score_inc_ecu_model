@@ -19,6 +19,10 @@ def _franca_transformer_impl(ctx):
         args.add("--src", source.path)
     for dependency in ctx.files.deps:
         args.add("--dep", dependency.path)
+    for defined in ctx.attr.defined:
+        args.add("--defined", defined)
+    if ctx.attr.need_preprocessor:
+        args.add("--need_preprocessor")
     args.add("--out", ctx.outputs.transformed_franca_files.path)
 
     ctx.actions.run(
@@ -34,7 +38,9 @@ def _franca_transformer_impl(ctx):
 _franca_transformer = rule(
     implementation = _franca_transformer_impl,
     attrs = {
+        "defined": attr.string_list(),
         "deps": attr.label_list(allow_files = [".fidl", ".fdepl"]),
+        "need_preprocessor": attr.bool(default = False),
         "srcs": attr.label_list(allow_files = [".fidl", ".fdepl"]),
         "transformed_franca_files": attr.output(mandatory = True),
         "_runner": attr.label(
@@ -45,11 +51,13 @@ _franca_transformer = rule(
     },
 )
 
-def franca_transformer(name, srcs, deps = [], **kwargs):
+def franca_transformer(name, srcs, deps = [], defined = [], need_preprocessor = False, **kwargs):
     _franca_transformer(
         name = name,
         srcs = srcs,
         deps = deps,
+        defined = defined,
+        need_preprocessor = need_preprocessor,
         transformed_franca_files = name + "_franca_parser/gen/" + name + "_transformed_franca_files.pkl",
         **kwargs
     )
