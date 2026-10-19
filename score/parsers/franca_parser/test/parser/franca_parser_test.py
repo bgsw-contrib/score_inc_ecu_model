@@ -15,14 +15,23 @@
 
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
+import score.parsers.franca_parser as franca_parser
 from score.parsers.franca_parser.parser import FrancaParser
+from score.parsers.franca_parser.transformer.file_graph_transformer import FrancaFileGraphTransformer
 
 TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
 
 
 class FrancaParserTest(unittest.TestCase):
     """Verify parsing and import-discovery behavior."""
+
+    def test_package_exports_public_parser_api(self) -> None:
+        self.assertIs(franca_parser.FrancaParser, FrancaParser)
+        self.assertIs(franca_parser.FrancaFileGraphTransformer, FrancaFileGraphTransformer)
+        self.assertEqual(franca_parser.__all__, ["FrancaFileGraphTransformer", "FrancaParser"])
 
     def test_parse_files_given_transitive_imports_expect_each_file_parsed_once(self) -> None:
         parser = FrancaParser(
@@ -47,6 +56,33 @@ class FrancaParserTest(unittest.TestCase):
 
         with self.assertRaisesRegex(FileNotFoundError, "missing_types.fidl.*missing_import.fidl"):
             parser.parse_files()
+
+    def test_preprocess_files_when_preprocessor_not_needed_reads_original_content(self) -> None:
+        content = "#if defined(FEATURE)\nkept\n#else\nexcluded\n#endif\n"
+        parser = FrancaParser(root_files=[], dependency_files=[])
+
+        with TemporaryDirectory() as temp_directory:
+            file_path = Path(temp_directory) / "condition.fidl"
+            file_path.write_text(content, encoding="utf-8")
+
+            result = parser._preprocess_files([file_path], ["FEATURE"], False)
+
+        self.assertEqual(result, {str(file_path.resolve()): content})
+
+    def test_preprocess_files_when_preprocessor_needed_uses_batch_runner(self) -> None:
+        parser = FrancaParser(root_files=[], dependency_files=[])
+        expected = {"condition.fidl": "processed content"}
+
+        with patch("score.parsers.franca_parser.parser.BatchRunner") as batch_runner_type:
+            batch_runner_type.return_value.batch_run.return_value = expected
+
+            result = parser._preprocess_files([Path("condition.fidl")], ["FEATURE"], True)
+
+        batch_runner_type.assert_called_once_with(
+            file_list=[Path("condition.fidl")],
+            defined_list=["FEATURE"],
+        )
+        self.assertEqual(result, expected)
 
 
 if __name__ == "__main__":
