@@ -18,7 +18,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 
-from score.ecu_model.data_types.common import DataTypeBase
 from score.parsers.protobuf_parser.resolver import (
     ProtoResolverError,
     resolve_references,
@@ -29,13 +28,13 @@ from score.parsers.protobuf_parser.transformer import (
 
 
 class ProtobufToDataTypeParser:
-    """Parse Protobuf descriptor artifacts into a mutable, resolved mapping."""
+    """Parse Protobuf descriptor artifacts into the model registry."""
 
     @staticmethod
     def parse(
         descriptor_set_paths: Iterable[str | Path],
-    ) -> dict[str, DataTypeBase]:
-        """Load, parse, and resolve protoc-produced descriptor artifacts by data type key."""
+    ) -> None:
+        """Load, parse, and resolve protoc-produced descriptor artifacts."""
         transformed_result = DescriptorSetTransformer(descriptor_set_paths).transform()
         definitions_by_key = transformed_result.definitions_by_key
 
@@ -43,5 +42,3 @@ class ProtobufToDataTypeParser:
         if protobuf_resolution_issues:
             message = "; ".join(f"{issue.code}: {issue.message}" for issue in protobuf_resolution_issues)
             raise ProtoResolverError(message)
-
-        return definitions_by_key

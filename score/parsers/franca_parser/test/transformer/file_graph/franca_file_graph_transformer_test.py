@@ -13,44 +13,42 @@
 
 """Behavior tests for Franca file graph transformation."""
 
+import os
 import unittest
 from pathlib import Path
 
-from score.parsers.franca_parser.parser import FrancaParser
-from score.parsers.franca_parser.transformer.file_graph_transformer import (
-    FrancaFileGraphTransformer,
-)
-
-TEST_DATA_DIRECTORY = Path(__file__).parent / "test_data"
+from score.ecu_model.data_types.common import DataTypeBase
+from score.ecu_model.data_types.struct import StructDataType
+from score.ecu_model.model import ModelRegistry
 
 
-class FrancaFileGraphTransformerTest(unittest.TestCase):
-    """Verify import-first traversal and import-cycle completion."""
+class FrancaParserIntegrationTest(unittest.TestCase):
+    """Verify Bazel parser actions produce the model-registry contract."""
 
-    def test_transform_files_given_direct_import_expect_import_stored_before_importer(self) -> None:
-        root_file = TEST_DATA_DIRECTORY / "root_imports_types.fidl"
-        imported_file = TEST_DATA_DIRECTORY / "imported_types.fidl"
-        parser = FrancaParser(root_files=[root_file], dependency_files=[imported_file])
+    def load_datatypes(self, target_name: str) -> dict[str, DataTypeBase]:
+        runfiles_root = Path(os.environ["RUNFILES_DIR"])
+        output_path = next(runfiles_root.rglob(f"{target_name}.pkl"))
+        ModelRegistry.deserialize(output_path.read_bytes())
+        return {
+            element.name.as_str: element
+            for element in ModelRegistry.elements.values()
+            if isinstance(element, DataTypeBase) and element.name is not None
+        }
 
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
+    def test_parse_files_given_import_expect_registered_resolved_models(self) -> None:
+        datatypes = self.load_datatypes("franca_file_graph_model_registry")
 
-        self.assertEqual(
-            list(transformed_files),
-            [imported_file.resolve(), root_file.resolve()],
-        )
-        self.assertEqual(
-            transformed_files[root_file.resolve()].namespace.as_str,
-            "example.franca.root",
-        )
+        root_value = datatypes["RootValue"]
+        imported_value = datatypes["ImportedValue"]
+        self.assertIsInstance(root_value, StructDataType)
+        self.assertIsInstance(imported_value, StructDataType)
+        self.assertIs(root_value.fields[0].data_type, imported_value)
 
-    def test_transform_files_given_import_cycle_expect_each_file_transformed_once(self) -> None:
-        left_file = TEST_DATA_DIRECTORY / "left_cycle.fidl"
-        right_file = TEST_DATA_DIRECTORY / "right_cycle.fidl"
-        parser = FrancaParser(root_files=[left_file], dependency_files=[right_file])
+    def test_parse_files_given_defined_macro_expect_only_enabled_model(self) -> None:
+        datatypes = self.load_datatypes("franca_preprocessor_model_registry")
 
-        transformed_files = FrancaFileGraphTransformer(parser.parse_files()).transform_files()
-
-        self.assertEqual(set(transformed_files), {left_file.resolve(), right_file.resolve()})
+        self.assertIn("FeatureValue", datatypes)
+        self.assertNotIn("FallbackValue", datatypes)
 
 
 if __name__ == "__main__":

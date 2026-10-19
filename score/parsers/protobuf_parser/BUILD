@@ -31,8 +31,12 @@ py_library(
 )
 
 py_binary(
-    name = "proto_parser_runner",
-    srcs = ["proto_parser_runner.py"],
-    main = "proto_parser_runner.py",
-    deps = [":protobuf_parser"],
+    name = "protobuf_model_parser_runner",
+    srcs = ["protobuf_model_parser_runner.py"],
+    main = "protobuf_model_parser_runner.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":protobuf_parser",
+        "//score/ecu_model",
+    ],
 )

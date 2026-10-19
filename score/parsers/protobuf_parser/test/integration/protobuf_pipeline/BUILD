@@ -13,7 +13,7 @@
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_test")
-load("//score/parsers/protobuf_parser:proto_parser_example.bzl", "proto_parser_example")
+load("//score/parsers/protobuf_parser:proto_parser.bzl", "protobuf_parse")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -42,8 +42,8 @@ proto_library(
     strip_import_prefix = "test_data",
 )
 
-proto_parser_example(
-    name = "pipeline_model",
+protobuf_parse(
+    name = "pipeline_model_registry",
     protobuf_deps = [
         ":consumer_proto",
         ":nested_references_proto",
@@ -54,10 +54,11 @@ proto_parser_example(
 py_test(
     name = "protobuf_pipeline_integration_test",
     srcs = ["protobuf_pipeline_integration_test.py"],
-    data = [":pipeline_model"],
+    data = [":pipeline_model_registry"],
     main = "protobuf_pipeline_integration_test.py",
     deps = [
         "//score/ecu_model",
+        "//score/ecu_model/data_types",
         "//score/parsers/protobuf_parser",
     ],
 )

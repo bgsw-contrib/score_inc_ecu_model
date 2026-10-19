@@ -36,11 +36,11 @@ FileDescriptorSet artifacts
 | `option_decoder_test.py` | `protobuf_option_decoder_unit_test` | `OPT` | Standard/custom options, flattened metadata, and option-pool errors. |
 | `parser_descriptor_test.py` | `protobuf_parser_descriptor_unit_test` | `PAR` | Descriptor loading, model conversion, metadata, deferred references, and parser errors. |
 | `resolver_test.py` | `protobuf_resolver_unit_test` | `RES` | Protobuf-name lookup, in-place reference binding, and resolver issues. |
-| `api_test.py` | `protobuf_api_integration_test` | `API` | The public `ProtobufToDataTypeParser.parse()` dictionary and error contracts. |
+| `api_test.py` | `protobuf_api_integration_test` | `API` | The public `ProtobufToDataTypeParser.parse()` registry and error contracts. |
 
 Tests below `integration/` are deliberately outside this parser API target set.
-They cover macro-backed behavior, not the artifact-based `ProtobufToDataTypeParser.parse()`
-contract, and therefore have no `COM`/`OPT`/`PAR`/`RES`/`API` case IDs.
+They cover Bazel `protobuf_parse` integration and registry pickle outputs, and
+therefore have no `COM`/`OPT`/`PAR`/`RES`/`API` case IDs.
 
 ## Case-ID Naming
 
