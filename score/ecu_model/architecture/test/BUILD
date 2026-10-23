@@ -40,6 +40,18 @@ py_test(
 )
 
 py_test(
+    name = "chain_test",
+    size = "small",
+    srcs = ["chain_test.py"],
+    deps = [
+        "//score/ecu_model",
+        "//score/ecu_model/architecture",
+        "//score/ecu_model/data_types",
+        "@pypi//pydantic",
+    ],
+)
+
+py_test(
     name = "ecu_test",
     size = "small",
     srcs = ["ecu_test.py"],

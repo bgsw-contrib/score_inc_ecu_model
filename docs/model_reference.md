@@ -26,6 +26,8 @@ Inheritance (`<|--`) and references between the documented types; members are om
 classDiagram
     ModelElement <|-- Activity
     ModelElement <|-- Application
+    ModelElement <|-- ChainNode
+    ModelElement <|-- Chain
     ModelElement <|-- Ecu
     ModelElement <|-- CommunicationBinding
     ModelElement <|-- PortDefinition
@@ -58,9 +60,15 @@ classDiagram
     Application --> Activity : activities
     Application --> ProvidedServicePort : provided_service_ports
     Application --> RequiredServicePort : required_service_ports
+    ChainNode --> Activity : activity, triggered_by
+    Chain --> Identifier : name
+    Chain --> QualifiedName : namespace
+    Chain --> Application : applications
+    Chain --> ChainNode : nodes
     Ecu --> Identifier : name
     Ecu --> QualifiedName : namespace
     Ecu --> Application : applications
+    Ecu --> Chain : chains
     CommunicationBinding --> ProtocolKind : protocol
     CommunicationBinding --> NetworkKind : network
     PortDefinition --> InterfaceDefinition : interface_design
@@ -177,6 +185,50 @@ _property_
 
 Return the dot-separated application name.
 
+## `score.ecu_model.architecture.chain`
+
+### `ChainNode`
+
+Inherits from [`ModelElement`](#modelelement).
+
+One activity in a chain together with the activities that trigger it.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `activity` | [`Activity`](#activity) | _required_ | Activity scheduled by this node |
+| `triggered_by` | list[[`Activity`](#activity)] | `list()` | Predecessor activities whose completion triggers this node |
+
+### `Chain`
+
+Inherits from [`ModelElement`](#modelelement).
+
+Process-overarching schedule, modelled as a directed acyclic graph of activity trigger dependencies.
+
+**Fields**
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `name` | [`Identifier`](#identifier) | _required_ | Identifier of the chain, unique within the owning ECU |
+| `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Namespace in which the chain is declared |
+| `cycle_time` | `timedelta` | _required_ | Cycle time at which the whole chain is triggered |
+| `applications` | list[[`Application`](#application)] | _required_ | Applications participating in this chain |
+| `nodes` | list[[`ChainNode`](#chainnode)] | _required_ | Activity nodes forming the trigger dependency graph |
+
+**Validators**
+
+| Validator | Kind | Applies to | Description |
+| --- | --- | --- | --- |
+| `_validate_positive_cycle_time` | field, after | `cycle_time` | Validates `cycle_time`. |
+| `_validate_chain_graph` | model, after | _the whole model_ | Validates the model as a whole. |
+
+#### `fully_qualified_name`
+
+_property_
+
+Return the dot-separated chain name.
+
 ## `score.ecu_model.architecture.ecu`
 
 ### `Ecu`
@@ -192,6 +244,7 @@ A deployment target grouping the applications that run on it.
 | `name` | [`Identifier`](#identifier) | _required_ | Identifier of the ECU, unique within the owning system |
 | `namespace` | [`QualifiedName`](#qualifiedname) | `QualifiedName()` | Namespace in which the ECU is declared |
 | `applications` | list[[`Application`](#application)] | _required_ | Applications deployed on this ECU |
+| `chains` | list[[`Chain`](#chain)] | `list()` | Scheduling chains spanning the applications of this ECU |
 | `deployment_properties` | `dict[str, object]` | `dict()` | Deployment metadata attached to this ECU |
 
 **Validators**
@@ -200,6 +253,7 @@ A deployment target grouping the applications that run on it.
 | --- | --- | --- | --- |
 | `_validate_property_names` | field, after | `deployment_properties` | Validates `deployment_properties`. |
 | `_validate_unique_application_names` | model, after | _the whole model_ | Validates the model as a whole. |
+| `_validate_chains` | model, after | _the whole model_ | Validates the model as a whole. |
 
 #### `fully_qualified_name`
 

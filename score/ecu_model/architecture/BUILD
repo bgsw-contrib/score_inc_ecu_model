@@ -19,6 +19,7 @@ py_library(
         "__init__.py",
         "activity.py",
         "application.py",
+        "chain.py",
         "ecu.py",
     ],
     visibility = ["//visibility:public"],
